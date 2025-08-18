@@ -1,1 +1,38 @@
-# Modeling-Recurrent-Events-Using-Deep-Neural-Network-in-Accelerated-Failure-Time-Models
+## To-Do List
+
+### 📚 Literature Review
+- [ ] Collect key papers on deep neural networks and recurrent event modeling
+- [ ] Summarize findings and methods
+- [ ] Identify gaps and opportunities
+
+### 🧪 Simulation
+- [ ] Design simulation scenarios
+- [ ] Implement simulation code (R/Python)
+- [ ] Analyze simulation results
+
+### 📊 Application
+- [ ] Identify relevant dataset
+- [ ] Preprocess data in R or Python
+- [ ] Train deep neural network models
+- [ ] Diagnostics and model evaluation
+- [ ] Summarize findings
+
+### 📝 Paper
+- [ ] Draft manuscript sections
+- [ ] Add figures/tables
+- [ ] Revise and finalize
+
+### 📦 R/Python Package Creation
+- [ ] Develop R or Python package for modeling
+- [ ] Add documentation and examples
+- [ ] Test and validate package
+
+---
+
+## Folder Structure
+
+- 📚 `/Literature_Review`: Key papers, notes, summaries
+- 🧪 `/Simulation`: Code & simulation results
+- 📊 `/Application`: Scripts and data analysis
+- 📦 `/RPackage`: R or Python package source, documentation, tests
+- 📝 `/Paper`: Manuscript, figures, tables
