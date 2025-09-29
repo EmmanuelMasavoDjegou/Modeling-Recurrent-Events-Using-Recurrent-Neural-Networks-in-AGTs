@@ -1,14 +1,14 @@
 ## To-Do List
 
 ### 📚 Literature Review
-- [ ] Collect key papers on deep neural networks and recurrent event modeling
-- [ ] Summarize findings and methods
-- [ ] Identify gaps and opportunities
+- [x] Collect key papers on deep neural networks and recurrent event modeling
+- [x] Summarize findings and methods
+- [x] Identify gaps and opportunities
 
 ### 🧪 Simulation
-- [ ] Design simulation scenarios
-- [ ] Implement simulation code (R/Python)
-- [ ] Analyze simulation results
+- [x] Design simulation scenarios
+- [x] Implement simulation code (R/Python)
+- [x] Analyze simulation results
 
 ### 📊 Application
 - [ ] Identify relevant dataset
@@ -18,7 +18,7 @@
 - [ ] Summarize findings
 
 ### 📝 Paper
-- [ ] Draft manuscript sections
+- [x] Draft manuscript sections
 - [ ] Add figures/tables
 - [ ] Revise and finalize
 
