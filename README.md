@@ -11,15 +11,15 @@
 - [x] Analyze simulation results
 
 ### 📊 Application
-- [ ] Identify relevant dataset
-- [ ] Preprocess data in R or Python
-- [ ] Train deep neural network models
-- [ ] Diagnostics and model evaluation
-- [ ] Summarize findings
+- [x] Identify relevant dataset
+- [x] Preprocess data in R or Python
+- [x] Train deep neural network models
+- [x] Diagnostics and model evaluation
+- [x] Summarize findings
 
 ### 📝 Paper
 - [x] Draft manuscript sections
-- [ ] Add figures/tables
+- [x] Add figures/tables
 - [ ] Revise and finalize
 
 ### 📦 R/Python Package Creation
