@@ -20,12 +20,7 @@
 ### 📝 Paper
 - [x] Draft manuscript sections
 - [x] Add figures/tables
-- [ ] Revise and finalize
-
-### 📦 R/Python Package Creation
-- [ ] Develop R or Python package for modeling
-- [ ] Add documentation and examples
-- [ ] Test and validate package
+- [x] Revise and finalize
 
 ---
 
