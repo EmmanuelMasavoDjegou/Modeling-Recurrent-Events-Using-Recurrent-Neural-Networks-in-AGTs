@@ -12,15 +12,10 @@
 
 ### 📊 Application
 - [x] Identify relevant dataset
-- [x] Preprocess data in R or Python
+- [x] Preprocess data in R and Python
 - [x] Train deep neural network models
 - [x] Diagnostics and model evaluation
 - [x] Summarize findings
-
-### 📝 Paper
-- [x] Draft manuscript sections
-- [x] Add figures/tables
-- [x] Revise and finalize
 
 ---
 
@@ -29,5 +24,3 @@
 - 📚 `/Literature_Review`: Key papers, notes, summaries
 - 🧪 `/Simulation`: Code & simulation results
 - 📊 `/Application`: Scripts and data analysis
-- 📦 `/RPackage`: R or Python package source, documentation, tests
-- 📝 `/Paper`: Manuscript, figures, tables
