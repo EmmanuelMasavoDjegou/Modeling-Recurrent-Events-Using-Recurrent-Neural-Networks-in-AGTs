@@ -7,12 +7,12 @@
 
 ### 🧪 Simulation
 - [x] Design simulation scenarios
-- [x] Implement simulation code (R/Python)
+- [x] Implement simulation code in Python
 - [x] Analyze simulation results
 
 ### 📊 Application
 - [x] Identify relevant dataset
-- [x] Preprocess data in R and Python
+- [x] Preprocess data in Python
 - [x] Train deep neural network models
 - [x] Diagnostics and model evaluation
 - [x] Summarize findings
