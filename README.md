@@ -24,3 +24,4 @@
 - 📚 `/Literature_Review`: Key papers, notes, summaries
 - 🧪 `/Simulation`: Code & simulation results
 - 📊 `/Application`: Scripts and data analysis
+- 📃 `/Preprint`: Paper under review
