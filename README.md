@@ -2,7 +2,7 @@
 
 ```text
 .
-├── literature_review/                                    # Literature review materials
+├── literature_review/                                    # Some literature review materials
 │
 ├── simulation/                                           # Simulation studies
 │   ├── RNN-AGT.ipynb                                     # Core RNN-AGT model: uncensored and censored gap-time
