@@ -13,7 +13,7 @@
 │   │                                                     # sub-sampling-pairs strategy (Python)
 │   ├── High_Dim_Cov_ipynb.ipynb                          # Experiments and results for high-dimensional
 │   │                                                     # covariate settings (Python)
-│   └── SimulationPlots.ipynb                          # Plots summarizing simulation results (Python)
+│   └── SimulationPlots.ipynb                             # Plots summarizing simulation results (Python)
 │
 └── application/                                          # Application to real recurrent-event data
     ├── Application_v1.ipynb                              # Application to real data, incl. comparison to
