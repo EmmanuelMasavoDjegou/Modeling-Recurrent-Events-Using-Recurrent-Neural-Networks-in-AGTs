@@ -20,7 +20,7 @@
     │                                                     # PWP-GT, PWP-TT, WLW (Python)
     ├── Application_v2.ipynb                              # Updated application notebook (Google Drive-based
     │                                                     # data loading) (Python)
-    ├── Dataset1_Data_Preprocessing.R                     # Preprocessing of the readmission (bladder cancer)
+    ├── Dataset1_Data_Preprocessing.R                     # Preprocessing of the readmission (colorectal cancer)
     │                                                     # dataset (R)
     ├── Dataset1_Classical_Recurrent_Event_Models.R       # Classical recurrent-event models fit to the
     │                                                     # readmission dataset (R)
