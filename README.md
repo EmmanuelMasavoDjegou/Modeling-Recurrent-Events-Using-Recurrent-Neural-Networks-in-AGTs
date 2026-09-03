@@ -8,8 +8,8 @@
 │   ├── RNN-AGT.ipynb                                     # Core RNN-AGT model: uncensored and censored gap-time
 │   │                                                     # settings, Gehan-loss training, and nonlinear/interaction
 │   │                                                     # effect experiments (Python)
-│   ├── RNN_AGT_v2.ipynb                                  # Updated RNN-AFT model implementation (Python)
-│   ├── Mod_Perform_Sub_sampling_Config_v2_ipynb.ipynb    # RNN-AFT with vectorized Gehan-type loss and
+│   ├── RNN_AGT_v2.ipynb                                  # Updated RNN-AGT model implementation (Python)
+│   ├── Mod_Perform_Sub_sampling_Config_v2_ipynb.ipynb    # RNN-AGT with vectorized Gehan-type loss and
 │   │                                                     # sub-sampling-pairs strategy (Python)
 │   ├── High_Dim_Cov_ipynb.ipynb                          # Experiments and results for high-dimensional
 │   │                                                     # covariate settings (Python)
