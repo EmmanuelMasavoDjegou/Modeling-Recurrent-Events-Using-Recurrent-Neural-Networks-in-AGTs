@@ -1,7 +1,4 @@
-# Modeling Recurrent Events Using Recurrent Neural Networks in AGTs
-
-Code for *RNN-AGT: A Recurrent Neural Network Framework for Accelerated
-Gap-Time Modeling via Gehan-Type Rank Loss* (Djegou, Adekpedjou and Wen).
+# Code for *RNN-AGT: A Recurrent Neural Network Framework for Accelerated Gap-Time Modeling via Gehan-Type Rank Loss*.
 
 > **Before running anything:** four defects in the original implementation were
 > corrected in this release, two of which changed published numbers. See
