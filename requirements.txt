@@ -1,0 +1,6 @@
+# Pinned for reproducibility. These versions fill the placeholders in
+# Section 5.3 of the manuscript.
+torch==2.14.0
+numpy>=1.24,<3
+pandas>=2.0
+scipy>=1.10

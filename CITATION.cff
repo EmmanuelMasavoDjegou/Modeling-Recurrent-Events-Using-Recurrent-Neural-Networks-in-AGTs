@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "RNN-AGT: A Recurrent Neural Network Framework for Accelerated Gap-Time Modeling via Gehan-Type Rank Loss"
+message: "If you use this software, please cite the associated paper."
+type: software
+authors:
+  - family-names: Djegou
+    given-names: Emmanuel Masavo
+  - family-names: Adekpedjou
+    given-names: Akim
+  - family-names: Wen
+    given-names: Xuerong Meggie
+repository-code: "https://github.com/EmmanuelMasavoDjegou/Modeling-Recurrent-Events-Using-Recurrent-Neural-Networks-in-AGTs"
+license: MIT
+version: "2.0.0"
