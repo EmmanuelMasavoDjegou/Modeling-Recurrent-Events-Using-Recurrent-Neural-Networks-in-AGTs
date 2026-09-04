@@ -68,7 +68,7 @@ each, in `rnn_agt/`, and the notebooks only set up experiments and report them.
 
 **Dataset 1 is colorectal cancer readmission** (`frailtypack::readmission`,
 n=403). **Dataset 2 is chronic granulomatous disease** (`survival::cgd`,
-n=128). An earlier README mislabelled Dataset 1 as bladder cancer.
+n=128).
 
 ---
 
