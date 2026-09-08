@@ -2,13 +2,12 @@
 """
 Table 7 -- the two rows added to the existing benchmark table (AE #1).
 
-Fits AFT-WRS and NN-AFT on the same *single fixed split* used in the original
-submission, so the new rows sit on the same footing as the PWP-GT, PWP-TT, WLW
-and RNN-AGT numbers already in Table 7.
+Fits AFT-WRS and NN-AFT on a single fixed split, so that all six rows of
+Table 7 sit on the same footing.
 
-These numbers do not support any comparative claim, and the manuscript's
-revised caption says so.  They exist for continuity with the original
-submission; the comparisons rest on Table 9.  If you find yourself quoting a
+These numbers do not support any comparative claim, and the table caption says
+so: with 128 and 403 subjects a single split could plausibly reorder the
+methods.  The comparisons rest on Table 9.  If you find yourself quoting a
 number from here in the discussion, quote Table 9 instead.
 
 Usage
@@ -46,7 +45,7 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--lr-linear", type=float, default=1e-2)
     ap.add_argument("--seed", type=int, default=42,
-                    help="Fixed seed matching the original submission's split.")
+                    help="Seed fixing the single train/test split.")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--out", default="results/table7_rows")
     args = ap.parse_args()

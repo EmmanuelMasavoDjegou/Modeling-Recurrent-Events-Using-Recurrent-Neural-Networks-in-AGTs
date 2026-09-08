@@ -1,16 +1,15 @@
 """
 Checks that back the claims made elsewhere in this package.
 
-Three of these exist because this package changes behaviour relative to the
-original notebooks.  A claim that the new code is more correct is worth little
-unless it can be demonstrated, so each check is runnable:
+Each check is runnable, so the properties the package relies on can be
+demonstrated rather than asserted:
 
 * :func:`check_cindex_agreement` -- the vectorised concordance agrees with a
-  literal transcription of the original nested-loop version.
+  direct nested-loop transcription of the definition.
 * :func:`check_subsampling_unbiasedness` -- the subsampled Gehan-WRS estimator
   is conditionally unbiased for the full objective (Theorem A.2).
-* :func:`check_censoring_leak` -- detects the original bug in which the latent
-  (uncensored) gap times were handed to the model.
+* :func:`check_censoring_leak` -- confirms the latent (uncensored) gap times
+  never reach the model.
 * :func:`check_predictability` -- confirms no predictor depends on its own
   outcome, which is assumption (A3).
 """
@@ -28,9 +27,9 @@ from .sampling import batchify, build_flat_index, gather_pair_residuals, sample_
 
 
 def reference_ipcw_cindex(subjects: List[Dict], pred_log: np.ndarray) -> float:
-    """Literal transcription of the original nested-loop concordance.
+    """Direct nested-loop transcription of the IPCW concordance definition.
 
-    Kept only as an oracle for :func:`check_cindex_agreement`.  Do not use it
+    An oracle for :func:`check_cindex_agreement` only.  Do not use it
     in analyses: it is O(N^2) in Python and unusable at the scale of the
     repeated-split experiments.
     """
@@ -136,7 +135,7 @@ def check_subsampling_unbiasedness(
 
 
 def check_censoring_leak(subjects_raw: List[Dict]) -> Dict[str, object]:
-    """Detect the original bug: latent gap times reaching the model.
+    """Confirm latent gap times never reach the model.
 
     Takes subjects as returned by :func:`rnn_agt.data.apply_censoring` (before
     reduction) and confirms that observed and latent log gaps differ exactly

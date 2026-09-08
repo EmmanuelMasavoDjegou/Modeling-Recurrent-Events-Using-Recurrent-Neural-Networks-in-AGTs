@@ -1,20 +1,19 @@
 """
 Pair subsampling and batching.
 
-Two changes from the original implementation.
+Two design points.
 
-**Vectorised sampling.**  The original ``sample_pairs_from_predictions`` called
-``np.delete(all_flat, flat)`` inside a Python loop over every uncensored
-record, allocating a fresh N-element array per anchor.  That is O(n' * N) work
-and memory churn per epoch, and it dominated runtime on the larger settings.
-Here the pool is sampled directly and self-pairs are resampled, which is O(m).
+**Vectorised sampling.**  The comparison pool is sampled directly and
+self-pairs resampled, which is O(m) in the number of pairs drawn.  Deleting the
+anchor from the pool per anchor would be O(n' * N) and dominates runtime on the
+larger settings.
 
-**Explicit inclusion probabilities.**  The original scaled the loss by a scalar
-``(N_total - 1) / s``.  That is correct only under exactly uniform sampling
-without replacement from a fixed pool.  Carrying per-pair ``inv_prob`` instead
-keeps the estimator unbiased under non-uniform or with-replacement sampling,
-and makes the unbiasedness claim in Theorem A.2 checkable rather than implicit
-(see :func:`rnn_agt.diagnostics.check_subsampling_unbiasedness`).
+**Explicit inclusion probabilities.**  Each pair carries its own ``inv_prob``
+rather than the loss being scaled by a single scalar.  A scalar is correct only
+under exactly uniform sampling without replacement from a fixed pool; per-pair
+weights keep the estimator unbiased under non-uniform or with-replacement
+sampling, and make the unbiasedness claim in Theorem A.2 checkable (see
+:func:`rnn_agt.diagnostics.check_subsampling_unbiasedness`).
 """
 
 from __future__ import annotations
@@ -189,10 +188,9 @@ def gather_pair_residuals(
     """Gather residuals and K* values for sampled pairs.
 
     ``resid`` is the dense (n, seq) residual tensor; the flat indices are
-    converted to (row, col) and gathered in one vectorised op.  The original
-    code built these with a Python loop that called ``torch.tensor(...)`` per
-    pair, which broke the computation graph's efficiency and dominated the
-    training step.
+    converted to (row, col) and gathered in one vectorised op.  Building these
+    with a Python loop calling ``torch.tensor(...)`` per pair dominates the
+    training step, so the gather is done in one call.
     """
     a_rows = torch.as_tensor(flat.subj_of_flat[anchor_flat], device=device)
     a_cols = torch.as_tensor(flat.pos_of_flat[anchor_flat], device=device)

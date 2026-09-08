@@ -71,7 +71,7 @@ def write_splits(
     subjects : list of dict
         Internal representation, used for stratification.
     subject_ids : sequence
-        The original dataset ids, in the same order as ``subjects``. These are
+        The dataset ids, in the same order as ``subjects``. These are
         what the R script joins on, so they must be the ids present in the CSV,
         not positional indices.
     """

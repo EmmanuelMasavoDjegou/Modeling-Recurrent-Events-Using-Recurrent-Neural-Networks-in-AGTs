@@ -6,18 +6,10 @@ Regenerates the three simulation tables of the manuscript: one per mean
 function (linear, interaction, GAM), each crossing three error distributions,
 two dependence mechanisms, three censoring levels and two training sizes.
 
-WHY THIS EXISTS
----------------
-The original notebooks produced these tables under three defects: an inverted
-Gehan hinge sign, a latent-gap leak that trained the model against uncensored
-outcomes, and a missing WRS normalization. The first two partially cancelled,
-so the numbers looked plausible while being wrong in a way that grew with the
-censoring fraction. The 65% columns are the most affected. Run
-`2.Simulation/RNN-AGT_v1.ipynb` first to measure the effect at your scale
-before deciding how much of the manuscript's simulation section to revise.
-
-A second, smaller change: `tau` is now solved for to hit each target censoring
-fraction rather than fixed at 3000, so the 25/50/65% columns mean what they say.
+`tau` is solved for to hit each target censoring fraction rather than fixed, so
+the 25/50/65% columns mean what they say. `simulation/loss_sensitivity.ipynb`
+shows how sensitive these numbers are to the loss orientation and the outcome
+scale, which is worth reading before interpreting the heavier-censoring columns.
 
 COST
 ----

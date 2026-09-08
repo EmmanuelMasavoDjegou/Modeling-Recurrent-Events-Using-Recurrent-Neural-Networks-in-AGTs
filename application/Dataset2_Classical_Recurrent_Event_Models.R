@@ -2,31 +2,29 @@
 # Dataset 2 (chronic granulomatous disease, survival::cgd)
 # Classical recurrent-event models, split-aware.
 #
-# WHAT CHANGED AND WHY
-# --------------------
-# The previous version fitted each Cox model once on the FULL dataset and
-# reported `summary(fit)$concordance`. That is Harrell's C computed IN SAMPLE,
-# unweighted, with no train/test split. RNN-AGT's reported C-index is
-# OUT OF SAMPLE and IPCW-weighted. Those are different estimands, so the two
-# columns of Table 6 were never comparable, and the in-sample Cox numbers are
-# optimistic by construction -- most severely on small samples.
+# DESIGN
+# ------
+# `summary(fit)$concordance` reports Harrell's C computed IN SAMPLE, unweighted,
+# with no train/test split. RNN-AGT's reported C-index is OUT OF SAMPLE and
+# IPCW-weighted. Those are different estimands and must not be compared: an
+# in-sample number is optimistic by construction, most severely on small
+# samples.
 #
-# This script therefore does three things differently:
+# This script therefore:
 #
-#   1. It reads split assignments written by the Python driver, so the Cox
+#   1. Reads split assignments written by the Python driver, so the Cox
 #      models are fitted on exactly the same training partitions as AFT-WRS,
 #      NN-AFT and RNN-AGT. Table 8's paired differences are only computable
 #      if every method sees the same splits.
 #
-#   2. It does NOT compute a concordance index. It exports the linear
+#   2. Does NOT compute a concordance index. It exports the linear
 #      predictor on the held-out rows and lets Python compute the IPCW C-index
 #      with the identical estimator used for the neural models. Computing it
 #      separately here would reintroduce exactly the estimand mismatch above.
 #
-#   3. It keeps the full-data fits as a separate, clearly labelled block, since
-#      the coefficient estimates and their standard errors are still worth
-#      reporting for interpretation. They are just no longer the basis of any
-#      predictive comparison.
+#   3. Keeps the full-data fits as a separate, clearly labelled block: the
+#      coefficient estimates and standard errors are worth reporting for
+#      interpretation, but are not the basis of any predictive comparison.
 #
 # SIGN CONVENTION (important)
 # ---------------------------
@@ -42,6 +40,53 @@
 #
 # If --splits is omitted, only the full-data descriptive block runs.
 ###############################################################################
+
+###############################################################################
+# PACKAGE BOOTSTRAP
+#
+# Installs anything missing before loading it, so the script runs on a clean
+# machine without a separate setup step. Only packages not already present are
+# fetched, so re-runs cost nothing.
+#
+# If a package fails to build, the message below points at the usual cause:
+# a missing system library, not a problem with R. On Debian/Ubuntu the ones
+# this dependency tree needs are
+#
+#   sudo apt install -y libuv1-dev libcurl4-openssl-dev libssl-dev \
+#                       libxml2-dev libfontconfig1-dev libfreetype6-dev \
+#                       libharfbuzz-dev libfribidi-dev libpng-dev \
+#                       libtiff-dev libjpeg-dev
+#
+# libuv1-dev in particular is required by `fs`, which `frailtypack` pulls in
+# via shiny; without it the install fails with "uv.h: No such file or
+# directory" and takes sass, bslib, shiny and frailtypack down with it.
+###############################################################################
+
+REQUIRED <- c("survival", "frailtypack", "dplyr")
+
+install_if_missing <- function(pkgs, repos = "https://cloud.r-project.org") {
+  missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing) == 0L) {
+    message("All required packages already installed.")
+    return(invisible(TRUE))
+  }
+  message("Installing: ", paste(missing, collapse = ", "))
+  install.packages(missing, repos = repos)
+
+  still <- missing[!vapply(missing, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(still) > 0L) {
+    stop(
+      "Failed to install: ", paste(still, collapse = ", "), "\n",
+      "install.packages() only warns on build failure, so scroll up to the\n",
+      "first 'ERROR:' line for the real cause. It is usually a missing system\n",
+      "library; see the header of this file for the apt packages needed.",
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
+}
+
+install_if_missing(REQUIRED)
 
 suppressPackageStartupMessages({
   library(survival)

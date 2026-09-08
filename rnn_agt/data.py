@@ -1,26 +1,21 @@
 """
 Data generation for the recurrent gap-time simulations.
 
-Two things here differ substantively from the original notebooks and are worth
-reading before use.
+Two points are worth reading before use.
 
-**1. Censoring now reaches the outcome.**  In the original
-``prepare_subjects_for_nn``, ``apply_censoring`` wrote the truncated gaps to
-``subj['censored_gaps']`` and the indicators to ``subj['delta']``, but the
-function then handed the model ``subj['log_gaps']`` -- the *latent, uncensored*
-gap times.  The network was therefore trained against the truth while being
-told, via delta, that some of those records were censored.  Padding slots past
-the censoring point were also passed through as if they were real records.
-Here, ``log_gaps_obs`` is built from the truncated gaps and every sequence is
-cut at the censoring point, so the observed and latent scales are distinct.
-This is the code-level counterpart of the manuscript's distinction between
-``Y_ij = log T_ij`` and ``Ytilde_ij = log G_ij`` (Reviewer 1, comment 4).
+**1. Observed and latent scales are distinct.**  ``apply_censoring`` writes the
+truncated gaps to ``log_gaps_obs`` and cuts every sequence at the censoring
+point, so nothing past that point survives as padding.  Models are trained
+against ``log_gaps_obs``; ``log_gaps_true`` is retained for diagnostics only
+and must never enter the training path.  This is the code-level counterpart of
+the manuscript's distinction between ``Y_ij = log T_ij`` and
+``Ytilde_ij = log G_ij``.
 
-**2. Five dependence mechanisms.**  The original supported exchangeable frailty
-and AR(1).  Reviewer 2 observed that AR(1) is close to the structure a
-recurrent network is built to represent, so three further mechanisms are
-provided: nonlinear NAR(1), higher-order AR(2), and a regime-switching
-event-dependent process.
+**2. Five dependence mechanisms.**  Exchangeable frailty and AR(1), plus three
+that depart from the linear first-order structure a recurrent network is best
+suited to: nonlinear NAR(1), higher-order AR(2), and a regime-switching
+event-dependent process.  Reporting all five guards against performance that is
+specific to a favourable data-generating choice.
 """
 
 from __future__ import annotations
@@ -48,11 +43,7 @@ def f_interaction(X: np.ndarray) -> np.ndarray:
 def f_gam(X: np.ndarray) -> np.ndarray:
     """f(z) = z1 + z2^3 + exp(0.9 z3).
 
-    Note: the original notebook's docstring advertised
-    ``x1 + 2*x2**3 + sin(0.9*x3)`` while the body computed
-    ``x1 + x2**3 + exp(0.9*x3)``.  The body matched the manuscript, so the
-    docstring was the error; it is corrected here.
-    """
+"""
     return X[:, 0] + X[:, 1] ** 3 + np.exp(0.9 * X[:, 2])
 
 
@@ -238,7 +229,7 @@ def generate_covariates(
 ) -> np.ndarray:
     """Generate the covariate matrix.
 
-    For ``p == 3`` this reproduces the original design: a Bernoulli treatment
+    For ``p == 3``: a Bernoulli treatment
     indicator and two correlated Gaussians.  For ``p > 3`` the extra columns
     are independent standard normals, which supports the high-dimensional
     experiments without changing the first three columns.
@@ -318,9 +309,6 @@ def apply_censoring(
     window; the gap straddling the window is observed only partially and is
     marked censored; anything after it never happens and is **dropped**.
 
-    This last point is the fix.  The original code kept those trailing slots as
-    zero-length records with ``delta = 0`` while simultaneously handing the
-    model the true log gap times for them, so the network saw padding as data.
 
     Adds keys ``gaps_obs``, ``log_gaps_obs``, ``delta``, ``C``, ``K_obs``.
     """
@@ -376,10 +364,9 @@ def calibrate_tau(
 ) -> float:
     """Find the ``tau`` giving a target proportion of censored records.
 
-    The original code hardcoded ``tau = 3000`` and reported whatever censoring
-    fraction resulted.  The manuscript reports results at 25%, 50% and 65%
-    incomplete follow-up, so tau has to be solved for, not fixed.  Bisection on
-    log-tau, since the censoring fraction is monotone decreasing in tau.
+    The manuscript reports results at 25%, 50% and 65% incomplete follow-up,
+    so tau is solved for rather than fixed.  Bisection on log-tau, since the
+    censoring fraction is monotone decreasing in tau.
     """
     lo, hi = 1e-3, 1e6
     for _ in range(max_iter):

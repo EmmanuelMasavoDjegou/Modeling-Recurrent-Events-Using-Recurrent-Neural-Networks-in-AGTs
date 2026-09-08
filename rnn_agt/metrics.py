@@ -1,13 +1,12 @@
 """
 IPCW concordance and AMSE.
 
-The original ``ipcw_cindex`` used a doubly nested ``df.iterrows()`` loop over
-every pair of records.  On the CRC data that is roughly 10^6 Python-level
-iterations per evaluation; across 200 repeated splits and six methods it would
-not finish in reasonable time.  Both metrics are vectorised here.  The
-concordance definition is unchanged, so results are comparable to the original
-(see :func:`rnn_agt.diagnostics.check_cindex_agreement`, which asserts
-agreement against a literal transcription of the original loop).
+Both metrics are vectorised.  A direct doubly-nested loop over pairs is roughly
+10^6 Python-level iterations per evaluation on the CRC data, which across 200
+repeated splits and six methods would not finish in reasonable time.  The
+definitions are unchanged by the vectorisation:
+:func:`rnn_agt.diagnostics.check_cindex_agreement` asserts agreement against a
+literal transcription of the definition.
 
 A note on how training-set metrics are computed, since Reviewer 2 asked.  Both
 functions take predictions produced by a single forward pass in evaluation

@@ -7,14 +7,13 @@ differences between rungs would confound the capability under test with
 incidental fitting differences, and the ablation would not isolate what
 Section 5.5 claims it isolates.
 
-Differences from the original loop, beyond the loss and sampler fixes
-documented in ``losses.py`` and ``sampling.py``:
+Implementation notes:
 
-* The per-pair Python loop that built ``left_preds``/``right_preds`` lists and
-  called ``torch.tensor(...)`` once per pair is replaced by a single gather.
-* Pairs are resampled every epoch from a fresh forward pass, as before, but the
-  sampler draws from its own RNG stream so that re-running a fit on identical
-  data with identical initialization is possible.
+* Sampled pairs are gathered in a single vectorised operation rather than one
+  ``torch.tensor(...)`` call per pair, which otherwise dominates the step.
+* Pairs are resampled every epoch from a fresh forward pass, with the sampler
+  drawing from its own RNG stream, so a fit can be re-run on identical data
+  with identical initialization.
 * Metrics are computed in ``eval()`` mode after fitting, never accumulated
   during optimization (Section 5.2).
 """
@@ -39,8 +38,8 @@ class TrainConfig:
     """Hyperparameters.
 
     Defaults follow Section 5.2 of the manuscript.  ``weighted_loss=True``
-    applies the WRS normalization; set it False only to reproduce the original
-    unweighted behaviour for comparison.
+    applies the WRS normalization; set it False only to measure the effect of
+    dropping it.
     """
 
     model: str = "rnn_agt"
@@ -163,8 +162,8 @@ def train_model(
             optimizer.zero_grad(set_to_none=True)
             # One forward pass over all training subjects per pair-batch.  The
             # sampled pairs reference arbitrary subjects, so restricting the
-            # pass to the batch's subjects (as the original did) saves little
-            # once the gather is vectorised and complicates index mapping.
+            # pass to the batch's subjects saves little once the gather is
+            # vectorised, and complicates the index mapping.
             pred = model(batched.x_prev, batched.x_cov)
             resid = batched.observed - pred
 

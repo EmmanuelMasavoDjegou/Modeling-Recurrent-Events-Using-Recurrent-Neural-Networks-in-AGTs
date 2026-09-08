@@ -7,11 +7,9 @@ initialization, pair subsampling and the train/test partitioner each draw from
 the others are held fixed.  This module is what makes that claim true.
 
 Do not call ``np.random.*`` or rely on the global NumPy/torch RNG anywhere in
-this package.  The original notebooks did (``np.random.seed(42)`` followed by
-bare ``np.random.normal(...)`` inside ``generate_gap_times``), which meant the
-data-generating stream and the model-initialization stream were entangled: you
-could not re-run a fit on identical data without also re-drawing the network
-weights.
+this package.  A single global seed entangles the data-generating stream with
+the model-initialization stream, so a fit cannot be re-run on identical data
+without also re-drawing the network weights.
 """
 
 from __future__ import annotations

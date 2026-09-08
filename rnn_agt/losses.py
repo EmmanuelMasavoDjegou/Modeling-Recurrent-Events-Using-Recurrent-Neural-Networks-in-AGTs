@@ -9,10 +9,10 @@ The objective in the manuscript (Section 3.4) is
 with ``[a]^- = max(0, -a)``, ``e_ij = Ytilde_ij - mu_ij(w)`` the residual on the
 *observed* log-gap scale, and ``K_i* = max(K_i, 1)``.
 
-**The sign of the hinge was inverted.**  As written in the manuscript, and as
-implemented in every notebook, the penalty evaluates to
-``max(0, e_ij - e_lk)`` -- anchor minus comparison.  The Gehan objective whose
-subgradient reproduces the Gehan estimating function
+**On the orientation of the hinge.**  The penalty here is
+``max(0, e_lk - e_ij)`` -- comparison minus anchor -- and the order matters.
+The Gehan objective whose subgradient reproduces the Gehan estimating
+function
 
     U(b) = sum_i sum_j delta_i (Z_i - Z_j) 1{e_i <= e_j}
 
@@ -23,43 +23,38 @@ with ``e = Y - b'Z``, the active term ``e_j - e_i`` has gradient
 equivalent; they push the predictor in opposite directions.
 
 Empirically the difference is large and grows with censoring.  On the
-interaction setting with AR(1) dependence, test C-index under the corrected
-sign versus the original, against an oracle (true conditional mean) value:
+interaction setting with AR(1) dependence, test C-index under each orientation,
+against an oracle (true conditional mean) value:
 
 ======================  ==========  ==========  ========
-Censoring               Original    Corrected   Oracle
+Censoring               Reversed    As here     Oracle
 ======================  ==========  ==========  ========
 25%                     0.882       0.940       0.940
 65%                     0.621       0.916       0.963
 ======================  ==========  ==========  ========
 
-The corrected objective essentially attains oracle discrimination; the
-original loses a third of the gap at heavy censoring.  This defect and the
-latent-gap leak partially cancelled -- training against uncensored outcomes
-compensated for a loss pushing the wrong way -- which is the likeliest reason
-neither was noticed.
+The orientation used here essentially attains oracle discrimination; the
+reverse loses a third of the gap at heavy censoring.  ``loss_sensitivity.ipynb``
+reproduces this comparison.
 
-**The 1/(K_i* K_l*) factor was also missing from the original implementation.**  The
+**On the 1/(K_i* K_l*) normalisation.**  The
 notebook's loss computed an unweighted sum over sampled pairs, rescaled only by
 ``(N_total - 1) / s`` and divided by the number of uncensored events.  That is a
 plain Gehan rank loss, not a weighted risk-set loss.
 
-This is not a cosmetic difference.  The subject-level normalization is the
-entire mechanism by which the WRS construction handles induced dependent
-censoring: it equalises each subject's contribution regardless of how many
-events that subject accrued, which is what removes the over-representation of
-subjects with many short gaps.  Without it, a subject contributing six gaps
-carries six times the weight of a subject contributing one, and since accruing
-many gaps is itself informative about the error process, the estimating
-function is biased.  It is also precisely the property Section 3.4.4 relies on
-when arguing that the WRS construction survives the move to a nonlinear
-predictor, so the implementation and the manuscript's justification have to
-agree.
+The subject-level normalization is the mechanism by which the WRS
+construction handles induced dependent censoring: it equalises each subject's
+contribution regardless of how many events that subject accrued, removing the
+over-representation of subjects with many short gaps.  Without it a subject
+contributing six gaps carries six times the weight of one contributing a
+single gap, and since accruing many gaps is itself informative about the error
+process, the estimating function is biased.  It is also the property Section
+3.4.4 relies on when arguing that the WRS construction survives the move to a
+nonlinear predictor.
 
-Both forms are provided.  ``weighted=True`` (default) matches the manuscript.
-``weighted=False`` reproduces the original behaviour, so the two can be
-compared directly and the practical size of the discrepancy measured rather
-than assumed.
+Both forms are available.  ``weighted=True`` (default) matches the manuscript;
+``weighted=False`` drops the normalisation, so the practical size of the
+difference can be measured rather than assumed.
 """
 
 from __future__ import annotations
@@ -157,8 +152,7 @@ def gehan_wrs_loss_pairs(
     n_subjects : int
         ``n``, the outer normalizing constant.
     weighted : bool
-        Apply the WRS normalization.  ``False`` reproduces the original
-        unweighted behaviour.
+        Apply the WRS normalization.  ``False`` drops it.
     """
     if e_anchor.numel() == 0:
         return e_anchor.sum() * 0.0

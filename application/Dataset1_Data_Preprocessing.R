@@ -27,6 +27,53 @@ if (!dir.exists("data"))    dir.create("data", recursive = TRUE)
 if (!dir.exists("results")) dir.create("results", recursive = TRUE)
 
 # Load necessary libraries
+###############################################################################
+# PACKAGE BOOTSTRAP
+#
+# Installs anything missing before loading it, so the script runs on a clean
+# machine without a separate setup step. Only packages not already present are
+# fetched, so re-runs cost nothing.
+#
+# If a package fails to build, the message below points at the usual cause:
+# a missing system library, not a problem with R. On Debian/Ubuntu the ones
+# this dependency tree needs are
+#
+#   sudo apt install -y libuv1-dev libcurl4-openssl-dev libssl-dev \
+#                       libxml2-dev libfontconfig1-dev libfreetype6-dev \
+#                       libharfbuzz-dev libfribidi-dev libpng-dev \
+#                       libtiff-dev libjpeg-dev
+#
+# libuv1-dev in particular is required by `fs`, which `frailtypack` pulls in
+# via shiny; without it the install fails with "uv.h: No such file or
+# directory" and takes sass, bslib, shiny and frailtypack down with it.
+###############################################################################
+
+REQUIRED <- c("frailtypack", "survival", "reReg", "reda", "dplyr", "ggplot2")
+
+install_if_missing <- function(pkgs, repos = "https://cloud.r-project.org") {
+  missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing) == 0L) {
+    message("All required packages already installed.")
+    return(invisible(TRUE))
+  }
+  message("Installing: ", paste(missing, collapse = ", "))
+  install.packages(missing, repos = repos)
+
+  still <- missing[!vapply(missing, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(still) > 0L) {
+    stop(
+      "Failed to install: ", paste(still, collapse = ", "), "\n",
+      "install.packages() only warns on build failure, so scroll up to the\n",
+      "first 'ERROR:' line for the real cause. It is usually a missing system\n",
+      "library; see the header of this file for the apt packages needed.",
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
+}
+
+install_if_missing(REQUIRED)
+
 library(frailtypack)
 library(survival)
 library(reReg)
@@ -98,24 +145,9 @@ boxplot(as.numeric(events_per_patient_non_treated),
         col = "orange")
 dev.off() # Close the device
 
-# Subset data for the first 10 patients
-first_10_patients <- readmission %>%
-  filter(id %in% unique(readmission$id)[1:10])
-
-# Assign colors based on treatment status
-first_10_patients <- first_10_patients %>%
-  mutate(color = ifelse(chemo == "Treated", "firebrick", "orange"))
-
-# Create the plot
-ggplot(first_10_patients, aes(x = t.stop, y = factor(id))) +
-  geom_point(aes(color = color, shape = factor(event)), size = 2) +  
-  scale_shape_manual(values = c(4,1)) +  # 3 for censored (cross), 1 for event (circle)
-  scale_color_identity() +  # Directly use assigned colors
-  labs(x = "Event Time (Days)", 
-       y = "Patient ID") +
-  theme_minimal() +
-  theme(legend.position = "none",  
-        axis.text.x = element_text(angle = 45, hjust = 1))
+# NOTE: the event-time plot for the first 10 patients was removed. It was
+# purely diagnostic, nothing downstream used it, and under R 4.5 / ggplot2 4.x
+# it aborted the script with an S7 operator clash before the CSV export ran.
 
 # Convert categorical variables to numeric encoding
 readmission$chemo <- ifelse(readmission$chemo == "Treated", 1, 0) # 0 = NonTreated, 1 = Treated

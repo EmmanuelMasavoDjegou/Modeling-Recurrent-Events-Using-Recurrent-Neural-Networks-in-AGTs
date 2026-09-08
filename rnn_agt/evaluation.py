@@ -1,11 +1,11 @@
 """
 Repeated splits, cross-validation and paired comparisons (Section 5.6).
 
-The original analyses used a single fixed 70/30 split.  With 128 and 403
+A single fixed 70/30 split is a fragile basis for comparison here.  With 128 and 403
 subjects, the test partitions hold roughly 38 and 121 subjects, and concordance
 is computed over comparable pairs among them, so a different draw could
-plausibly reorder the methods.  This module replaces that with B repeated
-stratified splits and subject-level k-fold CV.
+plausibly reorder the methods.  This module provides B repeated stratified
+splits and subject-level k-fold CV instead.
 
 Two design points matter for the comparisons to mean anything.
 
