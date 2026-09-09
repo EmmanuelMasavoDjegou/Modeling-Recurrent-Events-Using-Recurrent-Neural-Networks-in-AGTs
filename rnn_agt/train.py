@@ -53,6 +53,15 @@ class TrainConfig:
     optimizer: str = "rmsprop"
     weighted_loss: bool = True
     exclude_same_subject: bool = False
+    eval_at_epochs: tuple = ()
+    """Epoch counts at which to record metrics, e.g. ``(5, 10, 15)``.
+
+    Tables 1-4 of the manuscript report training duration as a column, so a
+    single fit has to yield several epoch columns. Evaluating at checkpoints
+    within one run is exactly equivalent to refitting to each epoch count with
+    the same seed, since the optimizer state at epoch 5 does not depend on
+    whether training later continues to 15, and it costs a third of the time.
+    Leave empty to record only the final epoch."""
     device: str = "cpu"
     track_history: bool = False
     extra: Dict = field(default_factory=dict)
@@ -66,6 +75,8 @@ class TrainResult:
     epoch_losses: List[float]
     history: Dict[str, List[float]]
     config: TrainConfig
+    checkpoints: Dict[int, Dict[str, float]] = field(default_factory=dict)
+    """Metrics at each epoch in ``cfg.eval_at_epochs``, keyed by epoch count."""
 
 
 def _make_optimizer(cfg: TrainConfig, params) -> optim.Optimizer:
@@ -134,6 +145,7 @@ def train_model(
     batched = batchify(train_subjects, cov_dim, device=device)
 
     epoch_losses: List[float] = []
+    checkpoints: Dict[int, Dict[str, float]] = {}
     history: Dict[str, List[float]] = {
         "train_cindex": [], "test_cindex": [], "train_amse": [], "test_amse": []
     }
@@ -181,6 +193,19 @@ def train_model(
 
         epoch_losses.append(float(np.mean(batch_losses)) if batch_losses else 0.0)
 
+        if (epoch + 1) in cfg.eval_at_epochs:
+            model.eval()
+            ck = {}
+            tr_ck = evaluate(train_subjects,
+                             predict(model, train_subjects, cov_dim, cfg.device))
+            ck["train_cindex"], ck["train_amse"] = tr_ck["cindex"], tr_ck["amse"]
+            if test_subjects:
+                te_ck = evaluate(test_subjects,
+                                 predict(model, test_subjects, cov_dim, cfg.device))
+                ck["test_cindex"], ck["test_amse"] = te_ck["cindex"], te_ck["amse"]
+            checkpoints[epoch + 1] = ck
+            model.train()
+
         if cfg.track_history:
             tr = evaluate(train_subjects, predict(model, train_subjects, cov_dim, cfg.device))
             history["train_cindex"].append(tr["cindex"])
@@ -212,4 +237,5 @@ def train_model(
         epoch_losses=epoch_losses,
         history=history,
         config=cfg,
+        checkpoints=checkpoints,
     )

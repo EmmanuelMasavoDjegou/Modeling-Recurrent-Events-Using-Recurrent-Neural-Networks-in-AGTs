@@ -48,6 +48,18 @@ ERRORS = ("normal", "gumbel", "logistic")
 DEPENDENCE = ("frailty", "ar1")
 CENSORING = (0.25, 0.50, 0.65)
 
+#: Training duration is a column in Tables 1-3, and the epoch grid differs by
+#: sample size: a larger training set needs fewer passes to reach the same
+#: effective number of gradient steps, so reporting both at the same epoch
+#: counts would not be a like-for-like comparison.
+EPOCH_GRID = {1000: (5, 10, 15), 5000: (2, 3, 5)}
+DEFAULT_EPOCHS = (5, 10, 15)
+
+
+def epochs_for(n_train: int) -> tuple:
+    """Epoch checkpoints for a given training size."""
+    return EPOCH_GRID.get(n_train, DEFAULT_EPOCHS)
+
 TABLE_OF = {"interaction": 1, "gam": 2, "linear": 3}
 MEAN_LABEL = {
     "linear": "linear mean function",
@@ -70,16 +82,18 @@ def run_cell(args, mean_func, error, dependence, censoring, n_train, seed):
     test_s = D.make_dataset(
         args.n_test, mean_func, error, rng, dependence=dependence, tau=tau
     )
+    checkpoints = epochs_for(n_train)
     cfg = TrainConfig(
-        model="rnn_agt", epochs=args.epochs, pair_sample_s=args.pair_s,
+        model="rnn_agt", epochs=max(checkpoints), pair_sample_s=args.pair_s,
         pair_batch_b=args.batch, hidden_dim=args.hidden,
         gru_layers=args.layers, lr=args.lr, device=args.device,
+        eval_at_epochs=checkpoints,
     )
     res = train_model(train_s, test_s, 3, cfg, seeds)
     achieved = 1.0 - sum(int(s["delta"].sum()) for s in train_s) / max(
         sum(len(s["delta"]) for s in train_s), 1
     )
-    return res.metrics, achieved
+    return res.checkpoints, achieved
 
 
 def main() -> None:
@@ -88,7 +102,10 @@ def main() -> None:
     ap.add_argument("--mean-funcs", nargs="+", default=list(MEAN_FUNCS))
     ap.add_argument("--n-trains", type=int, nargs="+", default=[1000, 5000])
     ap.add_argument("--n-test", type=int, default=2000)
-    ap.add_argument("--epochs", type=int, default=10)
+    ap.add_argument("--epochs", type=int, nargs="+", default=None,
+                    help="Override the epoch checkpoints for every sample "
+                         "size, e.g. --epochs 5 10 15. By default the grid "
+                         "follows EPOCH_GRID.")
     ap.add_argument("--hidden", type=int, default=64)
     ap.add_argument("--layers", type=int, default=2)
     ap.add_argument("--pair-s", type=int, default=30)
@@ -104,7 +121,11 @@ def main() -> None:
         args.replicates = 2
         args.n_trains = [200]
         args.n_test = 200
-        args.epochs = 2
+        args.epochs = [1, 2]
+
+    if args.epochs:
+        EPOCH_GRID.clear()
+        globals()["DEFAULT_EPOCHS"] = tuple(args.epochs)
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
 
@@ -120,22 +141,27 @@ def main() -> None:
 
     for k, (mf, err, dep, cens, n_tr) in enumerate(grid):
         for rep in range(args.replicates):
-            metrics, achieved = run_cell(
+            checkpoints, achieved = run_cell(
                 args, mf, err, dep, cens, n_tr, args.seed + 1000 * rep
             )
-            acc[(mf, err, dep, cens, n_tr)].append(
-                (metrics["test_cindex"], metrics["test_amse"])
-            )
+            for ep, m in checkpoints.items():
+                acc[(mf, err, dep, cens, n_tr, ep)].append(
+                    (m["test_cindex"], m["test_amse"])
+                )
             achieved_cens[(mf, err, dep, cens, n_tr)].append(achieved)
 
-        vals = np.array(acc[(mf, err, dep, cens, n_tr)], dtype=float)
+        eps = epochs_for(n_tr)
+        summary_bits = []
+        for ep in eps:
+            vals = np.array(acc[(mf, err, dep, cens, n_tr, ep)], dtype=float)
+            summary_bits.append(f"E{ep}:{np.nanmean(vals[:, 0]):.3f}")
         elapsed = time.time() - t0
         rate = elapsed / (k + 1)
         print(
             f"[{k+1:3d}/{len(grid)}] {mf:12s} {err:9s} {dep:8s} "
-            f"cens={cens:.2f} n={n_tr:5d}  "
-            f"C={np.nanmean(vals[:, 0]):.3f}  AMSE={np.nanmean(vals[:, 1]):6.2f}  "
-            f"(achieved cens {np.mean(achieved_cens[(mf, err, dep, cens, n_tr)]):.2f}, "
+            f"cens={cens:.2f} n={n_tr:5d}  " + "  ".join(summary_bits) +
+            f"  (achieved cens "
+            f"{np.mean(achieved_cens[(mf, err, dep, cens, n_tr)]):.2f}, "
             f"eta {rate * (len(grid) - k - 1) / 60:.0f} min)",
             flush=True,
         )
@@ -146,12 +172,13 @@ def main() -> None:
     summary = {}
     for key, vals in acc.items():
         arr = np.array(vals, dtype=float)
+        cens_key = key[:5]
         summary["|".join(map(str, key))] = {
             "cindex": float(np.nanmean(arr[:, 0])),
             "amse": float(np.nanmean(arr[:, 1])),
             "cindex_se": float(np.nanstd(arr[:, 0], ddof=1) / np.sqrt(len(arr)))
             if len(arr) > 1 else 0.0,
-            "achieved_censoring": float(np.mean(achieved_cens[key])),
+            "achieved_censoring": float(np.mean(achieved_cens[cens_key])),
             "n_replicates": len(arr),
         }
 
@@ -159,31 +186,15 @@ def main() -> None:
         json.dump({"summary": summary, "args": vars(args)}, fh, indent=2)
 
     for mf in args.mean_funcs:
-        rows = []
-        for err in ERRORS:
-            for dep in DEPENDENCE:
-                for cens in CENSORING:
-                    cells = [
-                        err if (dep == DEPENDENCE[0] and cens == CENSORING[0]) else "",
-                        D.DEPENDENCE_SPECS[dep].label if cens == CENSORING[0] else "",
-                        f"{int(cens * 100)}",
-                    ]
-                    for n_tr in args.n_trains:
-                        key = (mf, err, dep, cens, n_tr)
-                        if key in acc:
-                            arr = np.array(acc[key], dtype=float)
-                            cells.append(latex.fmt_c_amse(
-                                float(np.nanmean(arr[:, 0])),
-                                float(np.nanmean(arr[:, 1])),
-                            ))
-                        else:
-                            cells.append(r"\PH{n/a}")
-                    rows.append(cells)
-
-        body = latex.table_rows(rows, row_colors=("rowA", "rowB"))
+        body = latex.simulation_table(
+            acc, mf, ERRORS, DEPENDENCE, CENSORING, args.n_trains, epochs_for
+        )
+        header = "  %% column order: " + ", ".join(
+            f"n={n}/Epoch {ep}" for n in args.n_trains for ep in epochs_for(n)
+        )
         path = f"{args.out}_table{TABLE_OF[mf]}_{mf}.tex"
         latex.write_fragment(
-            path, f"Table {TABLE_OF[mf]}: {MEAN_LABEL[mf]}", body
+            path, f"Table {TABLE_OF[mf]}: {MEAN_LABEL[mf]}", header + "\n" + body
         )
         print(f"\nwrote {path}")
 

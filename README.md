@@ -126,6 +126,25 @@ request.
 Every driver writes a `.json` holding the raw per-replicate numbers and a `.tex`
 fragment ready to paste into the manuscript.
 
+Every emitter's column count is checked against the manuscript: 9 for
+Tables 1-3, 6 for Table 4, 4 for Table 5, 5 for Table 6, 3 for Table 7, 7 for
+Table 8, 5 for Table 9, 7 for Table 10. Tables 1-4 additionally use
+`\multirow` spans in their label columns, so the emitters produce those rather
+than flat shaded rows.
+
+Tables 1-4 report **training duration as a column**. The epoch grid differs by
+sample size, since a larger training set reaches the same effective number of
+gradient steps in fewer passes: `{5, 10, 15}` at `n=1000` and `{2, 3, 5}` at
+`n=5000` for Tables 1-3, `{5, 10}` and `{2, 3}` for Table 4. These are set in
+`EPOCH_GRID` in `run_simulation_tables.py` and can be overridden with
+`--epochs 5 10 15`.
+
+A single fit produces every epoch column, via `TrainConfig(eval_at_epochs=...)`.
+The optimizer state at epoch 5 does not depend on whether training later
+continues to 15, so checkpointing is exactly equivalent to refitting to each
+epoch count with the same seed, at a third of the cost. The emitted `.tex`
+fragment carries a comment giving the column order.
+
 ---
 
 ## Installation

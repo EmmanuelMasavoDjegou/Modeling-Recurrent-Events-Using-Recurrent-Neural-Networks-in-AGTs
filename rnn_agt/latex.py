@@ -209,3 +209,144 @@ def write_fragment(path: str, title: str, body: str) -> None:
         fh.write("%% Paste over the corresponding \\PH{} cells in the manuscript.\n\n")
         fh.write(body)
         fh.write("\n")
+
+
+# --------------------------------------------------------------------------
+# Tables 1-3: mean-function grids
+# --------------------------------------------------------------------------
+
+ERROR_LABELS = {"normal": "Normal", "gumbel": "Gumbel", "logistic": "Logistic"}
+ERROR_COLORS = {"normal": "errNormal", "gumbel": "errGumbel",
+                "logistic": "errLogistic"}
+DEPENDENCE_SHORT = {"frailty": "Frailty", "ar1": "AR(1)", "nar1": "NAR(1)",
+                    "ar2": "AR(2)", "event_dependent": "Event-dep."}
+
+
+def simulation_table(
+    acc: Dict[tuple, Sequence],
+    mean_func: str,
+    errors: Sequence[str],
+    dependence: Sequence[str],
+    censoring: Sequence[float],
+    n_trains: Sequence[int],
+    epochs_for,
+) -> str:
+    """Body rows for Tables 1-3, matching the manuscript's multirow layout.
+
+    The first two columns are ``\\multirow`` spans -- the error label over all
+    its dependence blocks, and the dependence label over its censoring levels --
+    with the error cell carrying its own background colour. Only the data
+    columns take the alternating ``rowA``/``rowB`` shading, and a
+    ``\\cmidrule`` separates the dependence blocks. Emitting flat coloured rows
+    instead would shade the label columns and lose the grouping.
+
+    ``acc`` is keyed by ``(mean_func, error, dependence, censoring, n_train,
+    epoch)`` and holds a sequence of ``(cindex, amse)`` pairs.
+    """
+    n_dep = len(dependence)
+    n_cens = len(censoring)
+    n_data_cols = sum(len(epochs_for(n)) for n in n_trains)
+    last_col = 3 + n_data_cols
+
+    out = []
+    shade = 0
+    for e_i, err in enumerate(errors):
+        for d_i, dep in enumerate(dependence):
+            for c_i, cens in enumerate(censoring):
+                cells = []
+                # column 1: error label, spanning every row for this error
+                if d_i == 0 and c_i == 0:
+                    cells.append(
+                        rf"\multirow{{{n_dep * n_cens}}}{{*}}"
+                        rf"{{\cellcolor{{{ERROR_COLORS.get(err, 'errNormal')}}}"
+                        rf"{ERROR_LABELS.get(err, err)}}}"
+                    )
+                else:
+                    cells.append("")
+                # column 2: dependence label, spanning its censoring levels
+                if c_i == 0:
+                    cells.append(
+                        rf"\multirow{{{n_cens}}}{{*}}"
+                        rf"{{{DEPENDENCE_SHORT.get(dep, dep)}}}"
+                    )
+                else:
+                    cells.append("")
+                # column 3: censoring percentage, unshaded
+                cells.append(f"{int(round(cens * 100))}")
+
+                color = "rowA" if shade % 2 == 0 else "rowB"
+                shade += 1
+                for n_tr in n_trains:
+                    for ep in epochs_for(n_tr):
+                        key = (mean_func, err, dep, cens, n_tr, ep)
+                        vals = acc.get(key)
+                        if vals:
+                            arr = np.asarray(vals, dtype=float)
+                            txt = fmt_c_amse(
+                                float(np.nanmean(arr[:, 0])),
+                                float(np.nanmean(arr[:, 1])),
+                            )
+                        else:
+                            txt = r"\PH{n/a}"
+                        cells.append(rf"\cellcolor{{{color}}}{txt}")
+
+                out.append("  " + " & ".join(cells) + r" \\")
+
+            if d_i < n_dep - 1:
+                out.append(rf"  \cmidrule(lr){{2-{last_col}}}")
+        if e_i < len(errors) - 1:
+            out.append(r"  \midrule[0.6pt]")
+    return "\n".join(out)
+
+
+def subsampling_table(
+    results: Dict[tuple, Dict[str, float]],
+    s_grid: Sequence[int],
+    b_grid: Sequence[int],
+    n_epochs: Dict[int, Sequence[int]],
+) -> str:
+    """Body rows for Table 4, with ``s`` as a multirow span over its ``b`` values.
+
+    ``results`` is keyed by ``(s, b, n_train, epoch)`` and holds a dict with
+    ``cindex`` and ``amse``.
+    """
+    out = []
+    shade = 0
+    for s_i, s_val in enumerate(s_grid):
+        for b_i, b_val in enumerate(b_grid):
+            cells = []
+            if b_i == 0:
+                cells.append(rf"\multirow{{{len(b_grid)}}}{{*}}{{{s_val}}}")
+            else:
+                cells.append("")
+            color = "rowA" if shade % 2 == 0 else "rowB"
+            shade += 1
+            cells.append(rf"\cellcolor{{{color}}}{b_val}")
+            for n_tr, eps in n_epochs.items():
+                for ep in eps:
+                    r = results.get((s_val, b_val, n_tr, ep), {})
+                    txt = fmt_c_amse(r.get("cindex", np.nan), r.get("amse", np.nan))
+                    cells.append(rf"\cellcolor{{{color}}}{txt}")
+            out.append("  " + " & ".join(cells) + r" \\")
+    return "\n".join(out)
+
+
+def realdata_table(results: Dict[str, Dict[str, float]]) -> str:
+    """Body rows for Table 6: train and test metrics per dataset.
+
+    ``results[dataset]`` holds ``train_cindex``, ``train_amse``,
+    ``test_cindex``, ``test_amse``.
+    """
+    spec = [("cgd", r"CGD Study ($n=128$)\textsuperscript{a}"),
+            ("crc", r"CRC Study ($n=403$)")]
+    rows = []
+    for key, label in spec:
+        r = results.get(key, {})
+        rows.append([
+            label,
+            fmt(r.get("train_cindex", np.nan), 3),
+            fmt(r.get("train_amse", np.nan), 2),
+            fmt(r.get("test_cindex", np.nan), 3),
+            fmt(r.get("test_amse", np.nan), 2),
+        ])
+    return table_rows(rows, row_colors=("rowA", "rowB"))
