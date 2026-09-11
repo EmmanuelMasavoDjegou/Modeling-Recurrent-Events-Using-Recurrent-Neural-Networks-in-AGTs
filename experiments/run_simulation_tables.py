@@ -140,9 +140,11 @@ def main() -> None:
 
     acc = defaultdict(list)
     achieved_cens = defaultdict(list)
+    per_n: dict = {}
     t0 = time.time()
 
     for k, (mf, err, dep, cens, n_tr) in enumerate(grid):
+        cell_start = time.time()
         for rep in range(args.replicates):
             checkpoints, achieved = run_cell(
                 args, mf, err, dep, cens, n_tr, args.seed + 1000 * rep
@@ -163,8 +165,21 @@ def main() -> None:
             summary_bits.append(
                 f"E{ep}:{np.nanmean(vals[:, 0]):.3f}/{np.nanmean(vals[:, 1]):.2f}"
             )
-        elapsed = time.time() - t0
-        rate = elapsed / (k + 1)
+        # Cost scales with the training size, and the grid alternates between
+        # them, so a single running average swings wildly from cell to cell and
+        # projects the wrong figure onto everything remaining. Time each
+        # training size separately and project each by its own rate.
+        cell_time = time.time() - cell_start
+        per_n.setdefault(n_tr, []).append(cell_time)
+        remaining = 0.0
+        for future_n in (g[4] for g in grid[k + 1:]):
+            samples = per_n.get(future_n)
+            if samples:
+                remaining += float(np.mean(samples))
+            else:
+                # not yet timed at this size: scale from a known one
+                known = next(iter(per_n.items()))
+                remaining += float(np.mean(known[1])) * (future_n / known[0])
         shift_bits = np.nanmean(
             [np.array(acc[(mf, err, dep, cens, n_tr, ep)], dtype=float)[:, 2].mean()
              for ep in eps]
@@ -175,7 +190,7 @@ def main() -> None:
             f"  (achieved cens "
             f"{np.mean(achieved_cens[(mf, err, dep, cens, n_tr)]):.2f}, "
             f"shift {shift_bits:+.2f}, "
-            f"eta {rate * (len(grid) - k - 1) / 60:.0f} min)",
+            f"eta {remaining / 60:.0f} min)",
             flush=True,
         )
 
