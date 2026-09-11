@@ -112,7 +112,13 @@ def main() -> None:
                 acc[mech][name].append(
                     (res.metrics["test_cindex"], res.metrics["test_amse"])
                 )
-        print(f"replicate {rep + 1}/{args.replicates} done", flush=True)
+        bits = []
+        for mech in MECHANISMS:
+            arr = np.array(acc[mech]["rnn_agt"], dtype=float)
+            bits.append(f"{mech[:4]}:{np.nanmean(arr[:, 0]):.3f}/"
+                        f"{np.nanmean(arr[:, 1]):.2f}")
+        print(f"replicate {rep + 1}/{args.replicates}  RNN-AGT "
+              + "  ".join(bits), flush=True)
 
     results, raw = {}, {}
     for mech in MECHANISMS:
@@ -143,7 +149,8 @@ def main() -> None:
         results[m][n]["cindex_se"] for m in MECHANISMS for n in MODELS
     )
     print("\n" + body)
-    print(f"\nmax Monte Carlo SE on the C-index: {max_se:.4f}")
+    print("\nprogress format above: <mechanism>:<C-index>/<AMSE> for RNN-AGT")
+    print(f"max Monte Carlo SE on the C-index: {max_se:.4f}")
     print(f"wrote {args.out}.json and {args.out}.tex")
 
 

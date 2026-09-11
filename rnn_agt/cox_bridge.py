@@ -1,7 +1,7 @@
 """
 Bridge between the Python AFT models and the R Cox models.
 
-Table 9 compares six methods. Three are fitted here in PyTorch; three
+Table 7 compares six methods. Three are fitted here in PyTorch; three
 (WLW, PWP-TT, PWP-GT) are fitted in R with ``survival``. For the paired
 differences in that table to mean anything, all six must see the same splits
 and be scored with the same estimator. This module is what enforces that.
@@ -31,7 +31,7 @@ A Cox linear predictor is on the log-hazard scale, not the log gap-time scale,
 so the difference ``log G_ij - (-lp)`` has no units in which a squared error
 means anything. Concordance is scale-free and so transfers; AMSE does not.
 :func:`merge_into_outcomes` therefore records ``nan`` for the Cox AMSE, and
-Table 9 reports concordance only. Fitting a location and scale to make the two
+Table 7 reports concordance only. Fitting a location and scale to make the two
 comparable would be a different model, not a rescaling of this one.
 
 Sign convention

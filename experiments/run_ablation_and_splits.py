@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Tables 8 and 9 -- ablation ladder and repeated splits (AE #1, Reviewer 2 #4).
+Tables 6 and 7 -- ablation ladder and repeated splits (AE #1, Reviewer 2 #4).
 
 Both tables come from the same B repeated stratified splits, so they are
-internally consistent: the ablation increments in Table 8 are paired
-differences computed on exactly the splits summarised in Table 9.  Running them
+internally consistent: the ablation increments in Table 6 are paired
+differences computed on exactly the splits summarised in Table 7.  Running them
 separately would risk reporting a delta that does not equal the difference of
 the two means shown elsewhere.
 
@@ -152,7 +152,7 @@ def main() -> None:
     ap.add_argument("--lr-linear", type=float, default=1e-2)
     ap.add_argument("--seed", type=int, default=20260903)
     ap.add_argument("--device", default="cpu")
-    ap.add_argument("--out", default="results/tables89")
+    ap.add_argument("--out", default="results/tables67")
     ap.add_argument("--splits-out", default="results/splits",
                     help="Directory for split assignment CSVs handed to R.")
     ap.add_argument("--cox-lp-cgd", default=None,
@@ -174,7 +174,8 @@ def main() -> None:
         n_ev = sum(int(s["delta"].sum()) for s in subs)
         print(f"{name}: {len(subs)} subjects, {n_rec} records, {n_ev} events, p={p}")
 
-    split_summary, cv_summary, deltas, ablation = {}, {}, {}, {}
+    split_summary, train_summary, cv_summary = {}, {}, {}
+    deltas, ablation = {}, {}
     all_outcomes = {}
 
     for ds, (subs, p) in datasets.items():
@@ -211,13 +212,14 @@ def main() -> None:
         else:
             print(
                 f"  no Cox predictors for {ds}; the WLW/PWP-TT/PWP-GT rows of\n"
-                f"  Table 9 will be blank. Run the R script on {splits_path}\n"
+                f"  Table 7 will be blank. Run the R script on {splits_path}\n"
                 f"  and re-run with --cox-lp-{ds}."
             )
 
         all_outcomes[ds] = outcomes
 
         split_summary[ds] = summarise(outcomes, "test_cindex")
+        train_summary[ds] = summarise(outcomes, "train_cindex")
         ablation[ds] = {}
         for m in MODELS:
             for metric, key in (("test_cindex", "cindex"), ("test_amse", "amse")):
@@ -240,6 +242,7 @@ def main() -> None:
 
     payload = {
         "split_summary": split_summary,
+        "train_summary": train_summary,
         "cv_summary": cv_summary,
         "ablation": ablation,
         "deltas": deltas,
@@ -252,23 +255,23 @@ def main() -> None:
     with open(f"{args.out}.json", "w") as fh:
         json.dump(payload, fh, indent=2, default=float)
 
-    t7 = latex.ablation_table(ablation, deltas)
-    latex.write_fragment(f"{args.out}_table8_ablation.tex",
-                         "Table 8: ablation ladder", t7)
+    t6 = latex.ablation_table(ablation, deltas)
+    latex.write_fragment(f"{args.out}_table6_ablation.tex",
+                         "Table 6: ablation ladder", t6)
 
     have_cox = any(
         m in split_summary.get(ds, {}) for ds in datasets for m in COX_MODELS
     )
     table8_models = (COX_MODELS + MODELS) if have_cox else MODELS
     table8_labels = dict(MODEL_LABELS, **COX_LABELS)
-    t8 = latex.repeated_splits_table(
-        split_summary, cv_summary, table8_models, table8_labels
+    t7 = latex.repeated_splits_table(
+        split_summary, train_summary, cv_summary, table8_models, table8_labels
     )
-    latex.write_fragment(f"{args.out}_table9_splits.tex",
-                         "Table 9: repeated splits and cross-validation", t8)
+    latex.write_fragment(f"{args.out}_table7_splits.tex",
+                         "Table 7: repeated splits and cross-validation", t7)
 
-    print("\n----- Table 8 -----\n" + t7)
-    print("\n----- Table 9 -----\n" + t8)
+    print("\n----- Table 6 -----\n" + t6)
+    print("\n----- Table 7 -----\n" + t7)
 
     print("\n----- Paired increments -----")
     for ds in datasets:
@@ -296,7 +299,7 @@ def main() -> None:
                 f"{latex.fmt_diff_ci(d)}  win rate {d['win_rate']:.2f}"
             )
         print(
-            "\nThese are the numbers for the Table 9 footnote. Both sides now\n"
+            "\nThese are the numbers for the Table 7 footnote. Both sides now\n"
             "come from the same splits and the same IPCW estimator, unlike the\n"
             "single-split comparison retained in Table 7."
         )

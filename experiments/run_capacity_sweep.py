@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Table 10 -- model capacity relative to sample size (Reviewer 1, #1).
+Table 8 -- model capacity relative to sample size (Reviewer 1, #1).
 
 Sweeps L in {1,2} and d in {8,16,32,64} on both clinical datasets under the
-same repeated splits used for Tables 8 and 9, reporting the trainable
+same repeated splits used for Tables 6 and 7, reporting the trainable
 parameter count alongside the number of training subjects.  That ratio is what
 the reviewer's concern is actually about: the L=2, d=64 configuration carries
 several thousand parameters and was inherited from simulations at
@@ -56,10 +56,13 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--seed", type=int, default=20260903)
     ap.add_argument("--device", default="cpu")
-    ap.add_argument("--out", default="results/table10_capacity")
+    ap.add_argument("--out", default="results/table8_capacity")
     args = ap.parse_args()
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
+
+    print("progress format: <dataset>: <C-index>/<AMSE> "
+          "(trainable parameters per training subject)\n")
 
     datasets = {}
     for name, path in (("cgd", args.cgd), ("crc", args.crc)):
@@ -97,13 +100,15 @@ def main() -> None:
             )
             summary = "  ".join(
                 f"{ds}: {results[(L, d)][ds]['cindex_mean']:.3f}"
+                f"/{results[(L, d)][ds]['amse_mean']:.2f}"
+                f" ({results[(L, d)][ds]['params_per_subject']:.0f}p/subj)"
                 for ds in datasets
             )
             print(f"L={L} d={d:3d} params={param_counts[(L, d)]:6,}  {summary}",
                   flush=True)
 
     body = latex.capacity_table(results, args.layers, args.dims, param_counts)
-    latex.write_fragment(f"{args.out}.tex", "Table 10: capacity sweep", body)
+    latex.write_fragment(f"{args.out}.tex", "Table 8: capacity sweep", body)
 
     with open(f"{args.out}.json", "w") as fh:
         json.dump(

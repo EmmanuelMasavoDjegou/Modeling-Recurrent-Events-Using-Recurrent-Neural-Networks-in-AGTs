@@ -71,8 +71,8 @@ isolates GRU-based history modeling.
 │   ├── run_simulation_tables.py         Tables 1-3
 │   ├── run_dependence_robustness.py     Table 5
 │   ├── run_benchmark_rows.py            Table 7
-│   ├── run_ablation_and_splits.py       Tables 8 and 9
-│   └── run_capacity_sweep.py            Table 10
+│   ├── run_ablation_and_splits.py       Tables 6 and 7
+│   └── run_capacity_sweep.py            Table 8
 │
 ├── simulation/
 │   ├── model_demo.ipynb                 walkthrough of the three model classes
@@ -117,18 +117,16 @@ request.
 | 3 | Linear mean function | same |
 | 4 | Sub-sampling sensitivity | `simulation/subsampling_sensitivity.ipynb` |
 | 5 | Dependence-mechanism robustness | `experiments/run_dependence_robustness.py` |
-| 6 | Real-data train/test metrics | `application/real_data_analysis.ipynb` |
-| 7 | Benchmark, single fixed split | `experiments/run_benchmark_rows.py` |
-| 8 | Ablation ladder | `experiments/run_ablation_and_splits.py` |
-| 9 | Repeated splits and 5-fold CV | same |
-| 10 | Capacity sweep | `experiments/run_capacity_sweep.py` |
+| 6 | Ablation ladder | `experiments/run_ablation_and_splits.py` |
+| 7 | Repeated splits and 5-fold CV | same |
+| 8 | Capacity sweep | `experiments/run_capacity_sweep.py` |
 
 Every driver writes a `.json` holding the raw per-replicate numbers and a `.tex`
 fragment ready to paste into the manuscript.
 
 Every emitter's column count is checked against the manuscript: 9 for
-Tables 1-3, 6 for Table 4, 4 for Table 5, 5 for Table 6, 3 for Table 7, 7 for
-Table 8, 5 for Table 9, 7 for Table 10. Tables 1-4 additionally use
+Tables 1-3, 6 for Table 4, 4 for Table 5, 7 for Table 6, 7 for Table 7, 7 for
+Table 8. Tables 1-4 additionally use
 `\multirow` spans in their label columns, so the emitters produce those rather
 than flat shaded rows.
 
@@ -249,7 +247,21 @@ python experiments/run_simulation_tables.py --replicates 500      # Tables 1-3
 python experiments/run_dependence_robustness.py --replicates 500  # Table 5
 ```
 
-Add `--quick` to either for a two-replicate pipeline test. The full grid for
+Add `--quick` to either for a two-replicate pipeline test.
+
+Progress lines report both metrics, since they answer different questions and
+can move in opposite directions:
+
+```
+[  1/108] linear  normal  frailty  cens=0.25 n=1000  E5:0.939/30.91  E10:0.939/50.41
+          E15:0.938/51.50  (achieved cens 0.27, shift -4.12, eta 415 min)
+```
+
+The format is `E<epoch>:<C-index>/<AMSE>`. `achieved cens` confirms the
+calibrated `tau` hit its target, and `shift` is the fitted intercept applied
+before AMSE. A shift growing with the epoch index is expected -- the level is
+unidentified by the objective and drifts with gradient steps -- but a large one
+is worth noting alongside the results. The full grid for
 Tables 1-3 is 108 cells times the replicate count, which is a cluster job rather
 than a laptop one; `--mean-funcs interaction` runs one table at a time.
 
@@ -284,7 +296,7 @@ python experiments/run_ablation_and_splits.py \
     --cox-lp-cgd results/cox_lp_cgd.csv \
     --cox-lp-crc results/cox_lp_crc.csv
 
-# Table 10
+# Table 8
 python experiments/run_capacity_sweep.py \
     --cgd data/cgd.csv --crc data/crc.csv --splits 200
 ```
@@ -317,7 +329,7 @@ with columns `id`, `gap_time`, `delta` and the covariates. `gap_time` must be
 strictly positive, since the models work on the log scale; the preprocessing
 scripts raise rather than filtering, because dropping rows on one side only
 would put the Cox and AFT models on different data and break the pairing that
-Table 9 depends on. See `data/README.md`.
+Table 7 depends on. See `data/README.md`.
 
 **Sign convention for the Cox bridge.** A Cox linear predictor is on the
 log-hazard scale, where larger means shorter gaps; the AFT models predict log
@@ -336,6 +348,13 @@ and ratio.
 **NN-AFT is parameter-matched to the GRU** via `models.matched_mlp_width`, so a
 gap between those two rungs cannot be attributed to one model simply being
 larger.
+
+**Nothing is reported from a single train-test split.** Every real-data
+quantity is averaged over `B=200` repeated stratified partitions, with all
+methods fitted on identical splits so that comparisons are paired. Table 7
+reports training and test columns side by side: they use the same estimator but
+on partitions with different censoring distributions, so the IPCW weights are
+on different scales and the two are not two draws of one quantity.
 
 **Win rate accompanies every paired difference.** A method can carry a positive
 mean increment while losing on 40% of splits; those are different claims, and

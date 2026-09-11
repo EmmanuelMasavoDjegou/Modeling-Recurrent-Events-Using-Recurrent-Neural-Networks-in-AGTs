@@ -103,7 +103,7 @@ def ablation_table(
     deltas: Dict[str, Dict[str, Dict[str, float]]],
     datasets: Sequence[str] = ("cgd", "crc"),
 ) -> str:
-    """Table 8: the ablation ladder with delta increments.
+    """Table 6: the ablation ladder with delta increments.
 
     ``summaries[dataset][model]`` holds mean/sd for each metric;
     ``deltas[dataset][contrast]`` holds paired differences.
@@ -143,18 +143,28 @@ def ablation_table(
 
 def repeated_splits_table(
     split_summary: Dict[str, Dict[str, Dict[str, float]]],
+    train_summary: Dict[str, Dict[str, Dict[str, float]]],
     cv_summary: Dict[str, Dict[str, Dict[str, float]]],
     models: Sequence[str],
     model_labels: Dict[str, str],
     datasets: Sequence[str] = ("cgd", "crc"),
 ) -> str:
-    """Table 9: repeated splits and cross-validation."""
+    """Body rows for Table 7: train, test and cross-validated C-index.
+
+    Training and test columns are both reported. They use the same estimator
+    but are computed on partitions with different censoring distributions, so
+    the IPCW weights are on different scales and the two are not two draws of
+    one quantity. Averaging over the splits removes the split-to-split noise
+    that makes any single training value hard to interpret.
+    """
     rows = []
     for m in models:
         cells = [model_labels.get(m, m)]
         for ds in datasets:
-            s = split_summary.get(ds, {}).get(m, {})
-            cells.append(fmt_mean_sd(s.get("mean", np.nan), s.get("sd", np.nan), 3))
+            tr = train_summary.get(ds, {}).get(m, {})
+            cells.append(fmt_mean_sd(tr.get("mean", np.nan), tr.get("sd", np.nan), 3))
+            te = split_summary.get(ds, {}).get(m, {})
+            cells.append(fmt_mean_sd(te.get("mean", np.nan), te.get("sd", np.nan), 3))
             cv = cv_summary.get(ds, {}).get(m, {})
             cells.append(fmt(cv.get("test_cindex", np.nan), 3))
         rows.append(cells)
@@ -168,7 +178,7 @@ def capacity_table(
     param_counts: Dict[tuple, int],
     datasets: Sequence[str] = ("cgd", "crc"),
 ) -> str:
-    """Table 10: capacity sweep.
+    """Table 8: capacity sweep.
 
     ``results[(L, d)][dataset]`` holds mean/sd for cindex and amse.
     """
@@ -186,19 +196,6 @@ def capacity_table(
                 )
             rows.append(cells)
     return table_rows(rows, row_colors=("rowA", "rowB"))
-
-
-def benchmark_rows(results: Dict[str, Dict[str, float]]) -> str:
-    """The two rows added to Table 7 (AFT-WRS and NN-AFT, single split)."""
-    rows = [
-        [r"\rev{AFT-WRS (linear gap-time)}",
-         fmt(results.get("aft_wrs", {}).get("cgd", np.nan), 3),
-         fmt(results.get("aft_wrs", {}).get("crc", np.nan), 3)],
-        [r"\rev{NN-AFT (nonlinear, no history)}",
-         fmt(results.get("nn_aft", {}).get("cgd", np.nan), 3),
-         fmt(results.get("nn_aft", {}).get("crc", np.nan), 3)],
-    ]
-    return table_rows(rows)
 
 
 def write_fragment(path: str, title: str, body: str) -> None:
@@ -330,23 +327,3 @@ def subsampling_table(
             out.append("  " + " & ".join(cells) + r" \\")
     return "\n".join(out)
 
-
-def realdata_table(results: Dict[str, Dict[str, float]]) -> str:
-    """Body rows for Table 6: train and test metrics per dataset.
-
-    ``results[dataset]`` holds ``train_cindex``, ``train_amse``,
-    ``test_cindex``, ``test_amse``.
-    """
-    spec = [("cgd", r"CGD Study ($n=128$)\textsuperscript{a}"),
-            ("crc", r"CRC Study ($n=403$)")]
-    rows = []
-    for key, label in spec:
-        r = results.get(key, {})
-        rows.append([
-            label,
-            fmt(r.get("train_cindex", np.nan), 3),
-            fmt(r.get("train_amse", np.nan), 2),
-            fmt(r.get("test_cindex", np.nan), 3),
-            fmt(r.get("test_amse", np.nan), 2),
-        ])
-    return table_rows(rows, row_colors=("rowA", "rowB"))

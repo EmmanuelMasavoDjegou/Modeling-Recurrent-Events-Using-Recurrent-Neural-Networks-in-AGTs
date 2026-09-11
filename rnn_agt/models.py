@@ -190,7 +190,7 @@ class AFTWRS(nn.Module):
 
 
 def count_parameters(model: nn.Module) -> int:
-    """Trainable parameter count, reported in Table 10."""
+    """Trainable parameter count, reported in Table 8."""
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 

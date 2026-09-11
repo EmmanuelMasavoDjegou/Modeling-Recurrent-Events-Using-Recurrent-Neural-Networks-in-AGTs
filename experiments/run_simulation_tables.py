@@ -133,7 +133,10 @@ def main() -> None:
         args.mean_funcs, ERRORS, DEPENDENCE, CENSORING, args.n_trains
     ))
     print(f"{len(grid)} cells x {args.replicates} replicates "
-          f"= {len(grid) * args.replicates} fits\n")
+          f"= {len(grid) * args.replicates} fits")
+    print("progress format: E<epoch>:<C-index>/<AMSE>; 'shift' is the fitted "
+          "intercept\napplied before AMSE (the Gehan objective does not "
+          "identify it).\n")
 
     acc = defaultdict(list)
     achieved_cens = defaultdict(list)
@@ -151,17 +154,27 @@ def main() -> None:
             achieved_cens[(mf, err, dep, cens, n_tr)].append(achieved)
 
         eps = epochs_for(n_tr)
+        # Report C-index and AMSE together: they answer different questions
+        # and can move in opposite directions, so showing only one hides half
+        # of what a cell is telling you.
         summary_bits = []
         for ep in eps:
             vals = np.array(acc[(mf, err, dep, cens, n_tr, ep)], dtype=float)
-            summary_bits.append(f"E{ep}:{np.nanmean(vals[:, 0]):.3f}")
+            summary_bits.append(
+                f"E{ep}:{np.nanmean(vals[:, 0]):.3f}/{np.nanmean(vals[:, 1]):.2f}"
+            )
         elapsed = time.time() - t0
         rate = elapsed / (k + 1)
+        shift_bits = np.nanmean(
+            [np.array(acc[(mf, err, dep, cens, n_tr, ep)], dtype=float)[:, 2].mean()
+             for ep in eps]
+        )
         print(
             f"[{k+1:3d}/{len(grid)}] {mf:12s} {err:9s} {dep:8s} "
             f"cens={cens:.2f} n={n_tr:5d}  " + "  ".join(summary_bits) +
             f"  (achieved cens "
             f"{np.mean(achieved_cens[(mf, err, dep, cens, n_tr)]):.2f}, "
+            f"shift {shift_bits:+.2f}, "
             f"eta {rate * (len(grid) - k - 1) / 60:.0f} min)",
             flush=True,
         )
