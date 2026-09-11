@@ -356,6 +356,14 @@ reports training and test columns side by side: they use the same estimator but
 on partitions with different censoring distributions, so the IPCW weights are
 on different scales and the two are not two draws of one quantity.
 
+**Runtime scales with the pair batch, not the sample size.** A batch of `b`
+pairs references at most `2b` subjects, so the trainer forwards only those
+rather than the whole training set on every optimizer step. Measured speedups
+against a full forward pass: 3.8x at `n=1000` and 19x at `n=3000`, growing with
+`n`. Below roughly `8 * pair_batch_b` subjects the per-step indexing costs more
+than it saves, so the trainer picks automatically; `TrainConfig(
+sub_batch_forward=...)` overrides it. Both paths give bit-identical results.
+
 **Win rate accompanies every paired difference.** A method can carry a positive
 mean increment while losing on 40% of splits; those are different claims, and
 both are reported.

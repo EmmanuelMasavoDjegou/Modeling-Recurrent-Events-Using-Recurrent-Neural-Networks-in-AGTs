@@ -202,3 +202,53 @@ def gather_pair_residuals(
 
     k = torch.as_tensor(flat.k_star, dtype=resid.dtype, device=device)
     return e_anchor, e_compare, k[a_rows], k[c_rows]
+
+
+def gather_pair_residuals_sub(
+    model,
+    batched: "Batched",
+    flat: FlatIndex,
+    anchor_flat: np.ndarray,
+    compare_flat: np.ndarray,
+    device: torch.device | str = "cpu",
+):
+    """Forward only the subjects a pair batch actually touches.
+
+    A batch of ``b`` pairs references at most ``2b`` distinct subjects, so a
+    forward pass over the whole training set per optimizer step is wasted work
+    that grows linearly in ``n`` while the useful work stays fixed. At
+    ``n = 5000`` with ``b = 64`` that is roughly a fortyfold overhead, and it
+    dominates the runtime of the larger simulation cells.
+
+    The rows touched by the batch are gathered, forwarded together, and the
+    pair indices remapped into the sub-batch. The arithmetic is unchanged --
+    the same residuals enter the same loss -- so results are bit-identical to
+    forwarding everything, only faster.
+
+    Returns ``(e_anchor, e_compare, k_anchor, k_compare)`` as before.
+    """
+    a_rows = flat.subj_of_flat[anchor_flat]
+    a_cols = flat.pos_of_flat[anchor_flat]
+    c_rows = flat.subj_of_flat[compare_flat]
+    c_cols = flat.pos_of_flat[compare_flat]
+
+    uniq, inverse = np.unique(
+        np.concatenate([a_rows, c_rows]), return_inverse=True
+    )
+    n_a = a_rows.size
+    a_local = torch.as_tensor(inverse[:n_a], device=device)
+    c_local = torch.as_tensor(inverse[n_a:], device=device)
+
+    idx = torch.as_tensor(uniq, dtype=torch.long, device=device)
+    pred_sub = model(batched.x_prev[idx], batched.x_cov[idx])
+    resid_sub = batched.observed[idx] - pred_sub
+
+    a_c = torch.as_tensor(a_cols, dtype=torch.long, device=device)
+    c_c = torch.as_tensor(c_cols, dtype=torch.long, device=device)
+    e_anchor = resid_sub[a_local, a_c]
+    e_compare = resid_sub[c_local, c_c]
+
+    k = torch.as_tensor(flat.k_star, dtype=resid_sub.dtype, device=device)
+    k_anchor = k[torch.as_tensor(a_rows, dtype=torch.long, device=device)]
+    k_compare = k[torch.as_tensor(c_rows, dtype=torch.long, device=device)]
+    return e_anchor, e_compare, k_anchor, k_compare

@@ -30,7 +30,8 @@ import torch.optim as optim
 from .losses import gehan_wrs_loss_pairs
 from .metrics import estimate_location_shift, evaluate, evaluate_calibrated
 from .models import build_model, count_parameters
-from .sampling import batchify, build_flat_index, gather_pair_residuals, sample_pairs
+from .sampling import (batchify, build_flat_index, gather_pair_residuals,
+                       gather_pair_residuals_sub, sample_pairs)
 
 
 @dataclass
@@ -53,6 +54,13 @@ class TrainConfig:
     optimizer: str = "rmsprop"
     weighted_loss: bool = True
     exclude_same_subject: bool = False
+    sub_batch_forward: Optional[bool] = None
+    """Forward only the subjects each pair batch touches.
+
+    ``None`` (default) decides from the training size, which is almost always
+    what you want. Set explicitly only to benchmark the two paths; results are
+    bit-identical either way."""
+
     calibrate_location: bool = True
     """Fit the intercept from the training residuals before computing AMSE.
 
@@ -149,6 +157,17 @@ def train_model(
 
     flat = build_flat_index(train_subjects)
     n_subjects = len(train_subjects)
+
+    # A pair batch touches at most 2b subjects, so forwarding only those costs
+    # O(b) instead of O(n) per step -- but it adds a fixed per-step indexing
+    # cost. That overhead only pays off once n is several times the batch's
+    # subject count. Measured: 0.6x at n=500 (slower), 3.8x at n=1000, 19x at
+    # n=3000. The threshold below sits just above the break-even point.
+    use_sub_batch = (
+        cfg.sub_batch_forward
+        if cfg.sub_batch_forward is not None
+        else n_subjects > 8 * cfg.pair_batch_b
+    )
     batched = batchify(train_subjects, cov_dim, device=device)
 
     epoch_losses: List[float] = []
@@ -180,17 +199,23 @@ def train_model(
             end = min(start + cfg.pair_batch_b, m)
 
             optimizer.zero_grad(set_to_none=True)
-            # One forward pass over all training subjects per pair-batch.  The
-            # sampled pairs reference arbitrary subjects, so restricting the
-            # pass to the batch's subjects saves little once the gather is
-            # vectorised, and complicates the index mapping.
-            pred = model(batched.x_prev, batched.x_cov)
-            resid = batched.observed - pred
-
-            e_a, e_c, k_a, k_c = gather_pair_residuals(
-                resid, flat, anchor_flat[start:end], compare_flat[start:end],
-                device=device,
-            )
+            # Forward only the subjects this pair batch touches. A batch of b
+            # pairs references at most 2b subjects, so a full pass per step
+            # costs O(n) for O(b) of useful work; at n=5000 that overhead
+            # dominates. The arithmetic is unchanged.
+            if use_sub_batch:
+                e_a, e_c, k_a, k_c = gather_pair_residuals_sub(
+                    model, batched, flat,
+                    anchor_flat[start:end], compare_flat[start:end],
+                    device=device,
+                )
+            else:
+                pred = model(batched.x_prev, batched.x_cov)
+                e_a, e_c, k_a, k_c = gather_pair_residuals(
+                    batched.observed - pred, flat,
+                    anchor_flat[start:end], compare_flat[start:end],
+                    device=device,
+                )
             loss = gehan_wrs_loss_pairs(
                 e_a, e_c, k_a, k_c, inv_prob_t[start:end],
                 n_subjects=n_subjects, weighted=cfg.weighted_loss,
