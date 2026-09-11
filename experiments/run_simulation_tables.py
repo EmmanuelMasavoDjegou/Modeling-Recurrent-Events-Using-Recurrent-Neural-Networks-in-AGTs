@@ -146,7 +146,7 @@ def main() -> None:
             )
             for ep, m in checkpoints.items():
                 acc[(mf, err, dep, cens, n_tr, ep)].append(
-                    (m["test_cindex"], m["test_amse"])
+                    (m["test_cindex"], m["test_amse"], m.get("location_shift", 0.0))
                 )
             achieved_cens[(mf, err, dep, cens, n_tr)].append(achieved)
 
@@ -178,6 +178,7 @@ def main() -> None:
             "amse": float(np.nanmean(arr[:, 1])),
             "cindex_se": float(np.nanstd(arr[:, 0], ddof=1) / np.sqrt(len(arr)))
             if len(arr) > 1 else 0.0,
+            "location_shift": float(np.nanmean(arr[:, 2])) if arr.shape[1] > 2 else 0.0,
             "achieved_censoring": float(np.mean(achieved_cens[cens_key])),
             "n_replicates": len(arr),
         }
@@ -200,6 +201,14 @@ def main() -> None:
 
     max_se = max(v["cindex_se"] for v in summary.values())
     print(f"\nmax Monte Carlo SE on the C-index: {max_se:.4f}")
+
+    shifts = [abs(v["location_shift"]) for v in summary.values()]
+    if shifts:
+        print(f"location shift applied before AMSE: median "
+              f"{np.median(shifts):.2f}, max {max(shifts):.2f}")
+        print("The Gehan objective does not identify the intercept, so this is "
+              "fitted\non the training residuals and applied to both partitions. "
+              "AMSE without it\nmeasures level drift rather than prediction error.")
     print(f"total runtime: {(time.time() - t0) / 60:.1f} min")
 
     # Report any cell where the achieved censoring missed its target, since a

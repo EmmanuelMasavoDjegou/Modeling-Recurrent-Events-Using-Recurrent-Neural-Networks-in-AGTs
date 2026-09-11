@@ -12,6 +12,9 @@ demonstrated rather than asserted:
   never reach the model.
 * :func:`check_predictability` -- confirms no predictor depends on its own
   outcome, which is assumption (A3).
+* :func:`check_location_invariance` -- confirms the Gehan objective is
+  invariant to a shift of the predictor, which is why the intercept has to be
+  fitted separately before AMSE is meaningful.
 """
 
 from __future__ import annotations
@@ -22,7 +25,7 @@ import numpy as np
 import torch
 
 from .losses import gehan_wrs_loss_full, gehan_wrs_loss_pairs
-from .metrics import ipcw_cindex, km_censoring_survival
+from .metrics import amse, ipcw_cindex, km_censoring_survival
 from .sampling import batchify, build_flat_index, gather_pair_residuals, sample_pairs
 
 
@@ -218,3 +221,46 @@ def summarise_checks(results: Dict[str, Dict]) -> str:
             verdict = "PASS" if abs(res["z"]) < 4 else "FAIL"
         lines.append(f"[{verdict}] {name}: {res}")
     return "\n".join(lines)
+
+
+def check_location_invariance(
+    subjects: List[Dict], cov_dim: int, shift: float = 3.7, seed: int = 0
+) -> Dict[str, object]:
+    """Confirm the Gehan objective cannot see the level of the predictor.
+
+    Evaluates the exact loss at a fixed predictor and again with every
+    prediction shifted by a constant. The two must agree: adding ``c`` sends
+    each residual to ``e - c``, leaving every pairwise difference unchanged.
+
+    This is the reason :func:`rnn_agt.metrics.estimate_location_shift` exists.
+    Concordance is likewise invariant, but AMSE is not, so an uncalibrated AMSE
+    reports the arbitrary level the optimizer happened to drift to.
+    """
+    b = batchify(subjects, cov_dim)
+    n_subjects = len(subjects)
+    torch.manual_seed(seed)
+    w = torch.randn(cov_dim, 1) * 0.5
+    pred = (b.x_cov @ w).squeeze(-1)
+
+    loss_a = float(gehan_wrs_loss_full(
+        pred, b.observed, b.delta, b.mask, b.k_star, n_subjects=n_subjects))
+    loss_b = float(gehan_wrs_loss_full(
+        pred + shift, b.observed, b.delta, b.mask, b.k_star,
+        n_subjects=n_subjects))
+
+    pred_np = pred.detach().cpu().numpy().astype(float)
+    c_a = ipcw_cindex(subjects, pred_np)
+    c_b = ipcw_cindex(subjects, pred_np + shift)
+    amse_a = amse(subjects, pred_np)
+    amse_b = amse(subjects, pred_np + shift)
+
+    return {
+        "loss_unshifted": loss_a,
+        "loss_shifted": loss_b,
+        "loss_abs_diff": abs(loss_a - loss_b),
+        "cindex_abs_diff": abs(c_a - c_b),
+        "amse_unshifted": amse_a,
+        "amse_shifted": amse_b,
+        "amse_changed": abs(amse_a - amse_b) > 1e-6,
+        "invariant": abs(loss_a - loss_b) < 1e-4 and abs(c_a - c_b) < 1e-9,
+    }

@@ -28,7 +28,7 @@ import torch
 import torch.optim as optim
 
 from .losses import gehan_wrs_loss_pairs
-from .metrics import evaluate
+from .metrics import estimate_location_shift, evaluate, evaluate_calibrated
 from .models import build_model, count_parameters
 from .sampling import batchify, build_flat_index, gather_pair_residuals, sample_pairs
 
@@ -53,6 +53,13 @@ class TrainConfig:
     optimizer: str = "rmsprop"
     weighted_loss: bool = True
     exclude_same_subject: bool = False
+    calibrate_location: bool = True
+    """Fit the intercept from the training residuals before computing AMSE.
+
+    The Gehan objective is invariant to a location shift of the predictor, so
+    the level is not identified by training and drifts with gradient steps.
+    Leave this on unless you specifically want to measure that drift."""
+
     eval_at_epochs: tuple = ()
     """Epoch counts at which to record metrics, e.g. ``(5, 10, 15)``.
 
@@ -147,7 +154,8 @@ def train_model(
     epoch_losses: List[float] = []
     checkpoints: Dict[int, Dict[str, float]] = {}
     history: Dict[str, List[float]] = {
-        "train_cindex": [], "test_cindex": [], "train_amse": [], "test_amse": []
+        "train_cindex": [], "test_cindex": [], "train_amse": [], "test_amse": [],
+        "location_shift": [],
     }
 
     for epoch in range(cfg.epochs):
@@ -196,22 +204,36 @@ def train_model(
         if (epoch + 1) in cfg.eval_at_epochs:
             model.eval()
             ck = {}
-            tr_ck = evaluate(train_subjects,
-                             predict(model, train_subjects, cov_dim, cfg.device))
+            tr_pred = predict(model, train_subjects, cov_dim, cfg.device)
+            # The Gehan objective does not identify the intercept, so the
+            # level is fitted here from the training residuals and applied to
+            # both partitions. Without it AMSE measures level drift rather
+            # than prediction error; see metrics.estimate_location_shift.
+            shift = (estimate_location_shift(train_subjects, tr_pred)
+                     if cfg.calibrate_location else 0.0)
+            tr_ck = evaluate_calibrated(train_subjects, tr_pred, shift)
             ck["train_cindex"], ck["train_amse"] = tr_ck["cindex"], tr_ck["amse"]
+            ck["location_shift"] = shift
             if test_subjects:
-                te_ck = evaluate(test_subjects,
-                                 predict(model, test_subjects, cov_dim, cfg.device))
+                te_ck = evaluate_calibrated(
+                    test_subjects,
+                    predict(model, test_subjects, cov_dim, cfg.device), shift)
                 ck["test_cindex"], ck["test_amse"] = te_ck["cindex"], te_ck["amse"]
             checkpoints[epoch + 1] = ck
             model.train()
 
         if cfg.track_history:
-            tr = evaluate(train_subjects, predict(model, train_subjects, cov_dim, cfg.device))
+            tr_p = predict(model, train_subjects, cov_dim, cfg.device)
+            h_shift = (estimate_location_shift(train_subjects, tr_p)
+                       if cfg.calibrate_location else 0.0)
+            tr = evaluate_calibrated(train_subjects, tr_p, h_shift)
             history["train_cindex"].append(tr["cindex"])
             history["train_amse"].append(tr["amse"])
+            history.setdefault("location_shift", []).append(h_shift)
             if test_subjects:
-                te = evaluate(test_subjects, predict(model, test_subjects, cov_dim, cfg.device))
+                te = evaluate_calibrated(
+                    test_subjects,
+                    predict(model, test_subjects, cov_dim, cfg.device), h_shift)
                 history["test_cindex"].append(te["cindex"])
                 history["test_amse"].append(te["amse"])
 
@@ -220,13 +242,18 @@ def train_model(
 
     # Final evaluation: one forward pass in eval mode, after fitting.
     model.eval()
-    train_metrics = evaluate(train_subjects, predict(model, train_subjects, cov_dim, cfg.device))
+    tr_pred = predict(model, train_subjects, cov_dim, cfg.device)
+    shift = (estimate_location_shift(train_subjects, tr_pred)
+             if cfg.calibrate_location else 0.0)
+    train_metrics = evaluate_calibrated(train_subjects, tr_pred, shift)
     metrics = {
         "train_cindex": train_metrics["cindex"],
         "train_amse": train_metrics["amse"],
+        "location_shift": shift,
     }
     if test_subjects:
-        test_metrics = evaluate(test_subjects, predict(model, test_subjects, cov_dim, cfg.device))
+        test_metrics = evaluate_calibrated(
+            test_subjects, predict(model, test_subjects, cov_dim, cfg.device), shift)
         metrics["test_cindex"] = test_metrics["cindex"]
         metrics["test_amse"] = test_metrics["amse"]
 

@@ -147,6 +147,34 @@ fragment carries a comment giving the column order.
 
 ---
 
+## Which script produces which figure
+
+| Figure | Contents | Produced by | Output files |
+|---|---|---|---|
+| 1 | Unrolled stacked GRU architecture | TikZ in the manuscript | none |
+| 2 | Training loss, all mean functions x error distributions (9 panels) | `simulation/figures.ipynb` | `loss_{normal,gumbel,log}_nonlinear.png`, `..._n1000_gam.png`, `..._n1000_linear.png` |
+| 3 | High-dimensional sweep, linear DGP (4 panels) | `simulation/high_dimensional.ipynb` | `amse_c-index_plots.png`, `train_test_cindex.png`, `train_test_amse.png`, `loss_trajectorie.png` |
+| 4 | High-dimensional sweep, nonlinear DGP (4 panels) | same notebook | the same four names with a `1` suffix |
+| 5 | NN-AFT architecture | TikZ in the manuscript | none |
+
+Figures 1 and 5 are drawn in LaTeX and have no code file; edit them in the
+manuscript source. The other three read their panels from `manuscript/images/`.
+
+Both notebooks write to `manuscript/images/` when that directory exists and to
+`results/` otherwise. **The filenames are fixed by the `\includegraphics` calls
+in the manuscript and must not be changed.** Note that `log` in the Figure 2
+filenames abbreviates the *logistic* error distribution, not a log transform,
+and that the unsuffixed Figure 3 names are easy to collide with -- nothing else
+in the repository writes them.
+
+Two additional plots are produced for inspection rather than for the
+manuscript: `simulation/subsampling_sensitivity.ipynb` writes
+`results/subsampling_sensitivity.png`, and
+`application/split_sensitivity.ipynb` draws the distribution of the C-index
+across repeated splits inline.
+
+---
+
 ## Installation
 
 ### Python
@@ -171,10 +199,15 @@ The R scripts install their own R packages on first run, but a few system
 libraries must be present first:
 
 ```bash
-sudo apt install -y libuv1-dev libcurl4-openssl-dev libssl-dev libxml2-dev \
-                    libfontconfig1-dev libfreetype6-dev libharfbuzz-dev \
-                    libfribidi-dev libpng-dev libtiff-dev libjpeg-dev
+sudo apt install -y cmake libuv1-dev libcurl4-openssl-dev libssl-dev \
+                    libxml2-dev libfontconfig1-dev libfreetype6-dev \
+                    libharfbuzz-dev libfribidi-dev libpng-dev \
+                    libtiff-dev libjpeg-dev
 ```
+
+`cmake` is needed only if you install packages outside the required set: some
+CRAN packages build their bundled C libraries with it, and its absence shows up
+as `CMAKE NOT FOUND` partway through a configure step.
 
 `libuv1-dev` is the one most often missed. Without it `fs` fails to configure
 with `uv.h: No such file or directory`, which cascades through `sass`, `bslib`
@@ -265,6 +298,19 @@ the out-of-sample IPCW values reported for the AFT models.
 ---
 
 ## Notes on use
+
+**AMSE is reported with the intercept fixed.** The Gehan objective is invariant
+to a location shift of the predictor: adding a constant to every prediction
+leaves all pairwise residual differences unchanged, so training carries no
+information about the level and the intercept is not identified. Concordance is
+unaffected, but AMSE is an absolute-error criterion and is not: an
+uncalibrated level displaced by `c` inflates AMSE by roughly `c**2`, and since
+the displacement grows with gradient steps, an uncalibrated AMSE gets *worse*
+with more training. `metrics.estimate_location_shift` fits the shift from the
+IPCW-weighted mean residual on the **training** partition and applies it to
+both, so no test outcome fits it. It is on by default
+(`TrainConfig(calibrate_location=True)`) and the fitted value is recorded as
+`location_shift`. `run_diagnostics.py` demonstrates the invariance directly.
 
 **Data format.** The drivers expect one row per gap, ordered within subject,
 with columns `id`, `gap_time`, `delta` and the covariates. `gap_time` must be

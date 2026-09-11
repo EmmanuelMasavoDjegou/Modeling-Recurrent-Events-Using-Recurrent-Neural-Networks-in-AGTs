@@ -48,7 +48,9 @@ if (!dir.exists("results")) dir.create("results", recursive = TRUE)
 # directory" and takes sass, bslib, shiny and frailtypack down with it.
 ###############################################################################
 
-REQUIRED <- c("frailtypack", "survival", "dplyr", "ggplot2")
+# ggplot2 was loaded by an earlier version but never called: its only use was
+# the diagnostic plot removed below.
+REQUIRED <- c("frailtypack", "survival", "dplyr")
 
 install_if_missing <- function(pkgs, repos = "https://cloud.r-project.org") {
   missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
@@ -77,7 +79,6 @@ install_if_missing(REQUIRED)
 library(frailtypack)
 library(survival)
 library(dplyr)
-library(ggplot2)
 
 # Load the CGD dataset
 data(cgd, package = "survival")

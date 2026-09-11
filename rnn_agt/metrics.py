@@ -229,3 +229,66 @@ def evaluate(subjects: List[Dict], pred_log: np.ndarray) -> Dict[str, float]:
         "cindex": ipcw_cindex(subjects, pred_log, g_hat=g_hat),
         "amse": amse(subjects, pred_log, g_hat=g_hat),
     }
+
+
+def estimate_location_shift(
+    subjects: List[Dict],
+    pred_log: np.ndarray,
+    g_hat: Optional[np.ndarray] = None,
+) -> float:
+    """IPCW-weighted mean residual, used to fix the intercept.
+
+    The Gehan objective is invariant to a location shift of the predictor:
+    adding a constant ``c`` to every prediction sends ``e_ij`` to ``e_ij - c``
+    for all records, leaving every pairwise difference ``e_lk - e_ij``
+    unchanged. The loss therefore carries no information about the level of
+    the predictor, and the intercept is not identified by it. This is the
+    familiar situation for rank-based AFT estimators, where the intercept has
+    to be recovered in a separate step from the residual
+    distribution~[Ritov 1990; Jin et al. 2003].
+
+    Practically this matters a great deal. Discrimination is rank-based and so
+    is unaffected, but AMSE is an absolute-error criterion: an uncalibrated
+    predictor whose level has drifted by ``c`` carries an AMSE inflated by
+    roughly ``c**2`` regardless of how good its ranking is. Because the drift
+    accumulates over gradient steps, an uncalibrated AMSE gets *worse* with
+    more training and with larger samples, which inverts the interpretation of
+    the metric entirely.
+
+    The shift is estimated on uncensored records only, weighted by the inverse
+    censoring probability, and should be estimated on the **training**
+    partition and then applied to both partitions. Estimating it on the test
+    partition would use the test outcomes to fit a parameter.
+    """
+    subj_ids, gaps, delta, preds = _flatten_records(subjects, pred_log)
+    if gaps.size == 0:
+        return 0.0
+    if g_hat is None:
+        g_hat = km_censoring_survival(gaps, delta)
+    mask = delta == 1
+    if not mask.any():
+        return 0.0
+    w = 1.0 / g_hat[mask]
+    resid = np.log(gaps[mask]) - preds[mask]
+    return float(np.sum(w * resid) / np.sum(w))
+
+
+def apply_location_shift(pred_log: np.ndarray, shift: float) -> np.ndarray:
+    """Add a fitted location shift to a prediction array."""
+    return pred_log + shift
+
+
+def evaluate_calibrated(
+    subjects: List[Dict],
+    pred_log: np.ndarray,
+    shift: float,
+) -> Dict[str, float]:
+    """Metrics with the intercept fixed by a shift fitted elsewhere.
+
+    ``cindex`` is identical to the uncalibrated value, since concordance is
+    invariant to a common shift; it is recomputed only so the two travel
+    together. ``amse`` is the quantity that changes.
+    """
+    out = evaluate(subjects, apply_location_shift(pred_log, shift))
+    out["location_shift"] = shift
+    return out

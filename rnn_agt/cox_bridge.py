@@ -25,6 +25,15 @@ predictor and scoring it here removes the possibility of that mismatch
 recurring, because there is exactly one concordance implementation in the
 project.
 
+AMSE is not reported for the Cox models
+---------------------------------------
+A Cox linear predictor is on the log-hazard scale, not the log gap-time scale,
+so the difference ``log G_ij - (-lp)`` has no units in which a squared error
+means anything. Concordance is scale-free and so transfers; AMSE does not.
+:func:`merge_into_outcomes` therefore records ``nan`` for the Cox AMSE, and
+Table 9 reports concordance only. Fitting a location and scale to make the two
+comparable would be a different model, not a rescaling of this one.
+
 Sign convention
 ---------------
 A Cox linear predictor is on the log-hazard scale: larger means higher hazard,

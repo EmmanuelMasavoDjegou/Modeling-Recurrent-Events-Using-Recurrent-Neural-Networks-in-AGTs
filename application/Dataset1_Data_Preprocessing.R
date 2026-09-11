@@ -48,7 +48,11 @@ if (!dir.exists("results")) dir.create("results", recursive = TRUE)
 # directory" and takes sass, bslib, shiny and frailtypack down with it.
 ###############################################################################
 
-REQUIRED <- c("frailtypack", "survival", "reReg", "reda", "dplyr", "ggplot2")
+# reReg, reda and ggplot2 were loaded by an earlier version but never called:
+# their only use was the diagnostic plot removed below. reReg in particular
+# drags in nloptr, which needs CMake to build, so requiring it would make this
+# script fail on machines that have no reason to need it.
+REQUIRED <- c("frailtypack", "survival", "dplyr")
 
 install_if_missing <- function(pkgs, repos = "https://cloud.r-project.org") {
   missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
@@ -76,10 +80,7 @@ install_if_missing(REQUIRED)
 
 library(frailtypack)
 library(survival)
-library(reReg)
-library(reda)
 library(dplyr)
-library(ggplot2)
 
 # Load the dataset
 data(readmission, package = "frailtypack")

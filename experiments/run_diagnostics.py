@@ -11,8 +11,8 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from rnn_agt import data as D
 from rnn_agt.diagnostics import (check_cindex_agreement, check_censoring_leak,
-                                 check_predictability, check_subsampling_unbiasedness,
-                                 summarise_checks)
+                                 check_location_invariance, check_predictability,
+                                 check_subsampling_unbiasedness, summarise_checks)
 from rnn_agt.models import RNNAGT
 from rnn_agt.seeds import make_seeds
 
@@ -37,6 +37,7 @@ def main() -> None:
         "subsampled Gehan-WRS is unbiased (unweighted)":
             check_subsampling_unbiasedness(subs, 3, n_draws=500, s=4, weighted=False),
         "predictor is history-predictable (A3)": check_predictability(model, subs, 3),
+        "Gehan loss is location-invariant": check_location_invariance(subs, 3),
     }
     print(summarise_checks(results))
 
