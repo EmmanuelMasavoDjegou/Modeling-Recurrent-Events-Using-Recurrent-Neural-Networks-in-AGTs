@@ -63,7 +63,7 @@ def build_configs(args) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--replicates", type=int, default=500)
+    ap.add_argument("--replicates", type=int, default=50)
     ap.add_argument("--n-train", type=int, default=1000)
     ap.add_argument("--n-test", type=int, default=2000)
     ap.add_argument("--censoring", type=float, default=0.50)
@@ -131,6 +131,8 @@ def main() -> None:
                 "test_amse": float(np.nanmean(arr[:, 1])),
                 "cindex_se": float(np.nanstd(arr[:, 0], ddof=1) / np.sqrt(len(arr)))
                 if len(arr) > 1 else 0.0,
+                "amse_se": float(np.nanstd(arr[:, 1], ddof=1) / np.sqrt(len(arr)))
+                if len(arr) > 1 else 0.0,
             }
             raw[mech][name] = arr.tolist()
 
@@ -145,12 +147,11 @@ def main() -> None:
         f"{args.out}.tex", "Table 5: dependence-mechanism robustness", body
     )
 
-    max_se = max(
-        results[m][n]["cindex_se"] for m in MECHANISMS for n in MODELS
-    )
+    max_se = max(results[m][n]["cindex_se"] for m in MECHANISMS for n in MODELS)
+    max_se_amse = max(results[m][n]["amse_se"] for m in MECHANISMS for n in MODELS)
     print("\n" + body)
     print("\nprogress format above: <mechanism>:<C-index>/<AMSE> for RNN-AGT")
-    print(f"max Monte Carlo SE on the C-index: {max_se:.4f}")
+    print(f"max Monte Carlo SE  C-index: {max_se:.4f}   AMSE: {max_se_amse:.4f}")
     print(f"wrote {args.out}.json and {args.out}.tex")
 
 

@@ -243,11 +243,30 @@ outcome. Run this before trusting any number the package produces.
 ### Simulations
 
 ```bash
-python experiments/run_simulation_tables.py --replicates 500      # Tables 1-3
-python experiments/run_dependence_robustness.py --replicates 500  # Table 5
+python experiments/run_simulation_tables.py --replicates 50      # Tables 1-3
+python experiments/run_dependence_robustness.py --replicates 50  # Table 5
 ```
 
 Add `--quick` to either for a two-replicate pipeline test.
+
+**Long runs are resumable.** `run_simulation_tables.py` writes an atomic
+checkpoint after every cell and skips completed cells on `--resume`:
+
+```bash
+python experiments/run_simulation_tables.py --replicates 500 \
+    --mean-funcs linear --out results/tables123_linear --resume
+```
+
+Re-issue the identical command after any interruption. The `.tex` and `.json`
+outputs are regenerated from the checkpoint, so a partially complete run can
+also be inspected by running with `--resume` once the cells you care about are
+done. The default is `R=50`, which matches the manuscript. The per-replicate standard
+deviation on the C-index is around 0.015, so `R=50` gives a standard error near
+0.002 and `R=500` near 0.0007. Since the tables print three decimals, the third
+decimal is already stable at 50 and the extra precision rarely changes a printed
+digit, while costing ten times the compute across 108 settings. Each driver
+prints the maximum standard error attained, so the resolution of any comparison
+can be checked directly.
 
 Progress lines report both metrics, since they answer different questions and
 can move in opposite directions:

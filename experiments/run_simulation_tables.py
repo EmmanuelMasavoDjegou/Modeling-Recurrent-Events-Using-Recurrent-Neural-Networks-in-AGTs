@@ -30,6 +30,7 @@ import argparse
 import itertools
 import json
 import os
+import pickle
 import sys
 import time
 from collections import defaultdict
@@ -98,7 +99,7 @@ def run_cell(args, mean_func, error, dependence, censoring, n_train, seed):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--replicates", type=int, default=500)
+    ap.add_argument("--replicates", type=int, default=50)
     ap.add_argument("--mean-funcs", nargs="+", default=list(MEAN_FUNCS))
     ap.add_argument("--n-trains", type=int, nargs="+", default=[1000, 5000])
     ap.add_argument("--n-test", type=int, default=2000)
@@ -115,6 +116,14 @@ def main() -> None:
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--out", default="results/tables123")
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--resume", action="store_true",
+                    help="Continue from the checkpoint written by a previous "
+                         "run with the same --out. Cells already completed are "
+                         "skipped.")
+    ap.add_argument("--checkpoint-every", type=int, default=1,
+                    help="Write the checkpoint after this many cells. A long "
+                         "run with no intermediate output loses everything to "
+                         "a single reboot.")
     args = ap.parse_args()
 
     if args.quick:
@@ -141,9 +150,34 @@ def main() -> None:
     acc = defaultdict(list)
     achieved_cens = defaultdict(list)
     per_n: dict = {}
+    done_cells: set = set()
+    ckpt_path = f"{args.out}.ckpt.pkl"
+
+    if args.resume and os.path.exists(ckpt_path):
+        with open(ckpt_path, "rb") as fh:
+            state = pickle.load(fh)
+        acc = defaultdict(list, state["acc"])
+        achieved_cens = defaultdict(list, state["achieved_cens"])
+        per_n = state["per_n"]
+        done_cells = state["done_cells"]
+        print(f"resuming from {ckpt_path}: {len(done_cells)}/{len(grid)} "
+              f"cells already complete\n")
+    elif args.resume:
+        print(f"no checkpoint at {ckpt_path}; starting fresh\n")
+
+    def save_checkpoint():
+        tmp = ckpt_path + ".tmp"
+        with open(tmp, "wb") as fh:
+            pickle.dump({"acc": dict(acc), "achieved_cens": dict(achieved_cens),
+                         "per_n": per_n, "done_cells": done_cells,
+                         "args": vars(args)}, fh)
+        os.replace(tmp, ckpt_path)   # atomic: a crash mid-write cannot corrupt
+
     t0 = time.time()
 
     for k, (mf, err, dep, cens, n_tr) in enumerate(grid):
+        if (mf, err, dep, cens, n_tr) in done_cells:
+            continue
         cell_start = time.time()
         for rep in range(args.replicates):
             checkpoints, achieved = run_cell(
@@ -194,6 +228,12 @@ def main() -> None:
             flush=True,
         )
 
+        done_cells.add((mf, err, dep, cens, n_tr))
+        if (k + 1) % args.checkpoint_every == 0:
+            save_checkpoint()
+
+    save_checkpoint()
+
     # ------------------------------------------------------------------
     # Emit one LaTeX fragment per mean function
     # ------------------------------------------------------------------
@@ -205,6 +245,8 @@ def main() -> None:
             "cindex": float(np.nanmean(arr[:, 0])),
             "amse": float(np.nanmean(arr[:, 1])),
             "cindex_se": float(np.nanstd(arr[:, 0], ddof=1) / np.sqrt(len(arr)))
+            if len(arr) > 1 else 0.0,
+            "amse_se": float(np.nanstd(arr[:, 1], ddof=1) / np.sqrt(len(arr)))
             if len(arr) > 1 else 0.0,
             "location_shift": float(np.nanmean(arr[:, 2])) if arr.shape[1] > 2 else 0.0,
             "achieved_censoring": float(np.mean(achieved_cens[cens_key])),
@@ -228,7 +270,9 @@ def main() -> None:
         print(f"\nwrote {path}")
 
     max_se = max(v["cindex_se"] for v in summary.values())
-    print(f"\nmax Monte Carlo SE on the C-index: {max_se:.4f}")
+    max_se_amse = max(v["amse_se"] for v in summary.values())
+    print(f"\nmax Monte Carlo SE  C-index: {max_se:.4f}   AMSE: {max_se_amse:.4f}")
+    print("These two numbers fill the \\PH{max SE} slots in the table footnote.")
 
     shifts = [abs(v["location_shift"]) for v in summary.values()]
     if shifts:
