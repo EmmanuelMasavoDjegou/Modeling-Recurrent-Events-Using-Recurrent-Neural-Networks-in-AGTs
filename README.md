@@ -145,6 +145,10 @@ fragment carries a comment giving the column order.
 
 ---
 
+[`CHECKLIST.md`](CHECKLIST.md) tracks every table, figure and unfilled
+placeholder against the command that produces it, including the order the
+real-data stages must run in and the prose placeholders no script fills.
+
 ## Which script produces which figure
 
 | Figure | Contents | Produced by | Output files |
