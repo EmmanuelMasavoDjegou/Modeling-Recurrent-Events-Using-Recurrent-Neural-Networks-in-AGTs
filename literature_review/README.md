@@ -1,4 +1,4 @@
 # literature_review/
 
-Background reading. Keep the existing PDFs here; this directory is unchanged by
-the restructure apart from its name (was `1.Literature Review/`).
+Background reading on rank-based inference for accelerated failure time models,
+recurrent-event regression, and neural survival analysis. Place the PDFs here.

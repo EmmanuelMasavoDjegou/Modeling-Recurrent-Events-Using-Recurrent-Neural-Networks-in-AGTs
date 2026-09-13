@@ -41,7 +41,7 @@ paired differences computed on exactly the splits summarised in Table 7.
 
 1. **Simulations** (no data dependency):
    `run_simulation_tables.py`, `run_dependence_robustness.py`,
-   `subsampling_sensitivity.ipynb`
+   `run_subsampling_sensitivity.py`
 2. **R preprocessing** → `data/crc.csv`, `data/cgd.csv`
 3. **`run_ablation_and_splits.py`** → writes `results/splits/`
 4. **R Cox scripts** on those splits → `results/cox_lp_*.csv`

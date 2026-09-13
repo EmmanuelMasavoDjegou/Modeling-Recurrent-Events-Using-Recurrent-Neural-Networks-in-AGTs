@@ -77,7 +77,7 @@ isolates GRU-based history modeling.
 ├── simulation/
 │   ├── model_demo.ipynb                 walkthrough of the three model classes
 │   ├── loss_sensitivity.ipynb           sensitivity to loss and censoring choices
-│   ├── subsampling_sensitivity.ipynb    Table 4
+│   ├── subsampling_sensitivity.ipynb    one configuration at a time
 │   ├── high_dimensional.ipynb           behaviour as the covariate dimension grows
 │   └── figures.ipynb                    manuscript figures
 │
@@ -170,8 +170,8 @@ and that the unsuffixed Figure 3 names are easy to collide with -- nothing else
 in the repository writes them.
 
 Two additional plots are produced for inspection rather than for the
-manuscript: `simulation/subsampling_sensitivity.ipynb` writes
-`results/subsampling_sensitivity.png`, and
+manuscript:
+`simulation/subsampling_sensitivity.ipynb` inspects a single configuration, and
 `application/split_sensitivity.ipynb` draws the distribution of the C-index
 across repeated splits inline.
 

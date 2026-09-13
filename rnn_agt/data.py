@@ -47,10 +47,25 @@ def f_gam(X: np.ndarray) -> np.ndarray:
     return X[:, 0] + X[:, 1] ** 3 + np.exp(0.9 * X[:, 2])
 
 
+def f_highdim_nonlinear(X: np.ndarray) -> np.ndarray:
+    """f(z) = 3 z1 - 6 z2 + 4 z3 + 2 z1 z2 - 3 z2^2 + sin(z3).
+
+    Used only for the nonlinear high-dimensional experiment, where it is the
+    signal carried by the first three covariates while the remaining p-3 are
+    pure noise. It is richer than :func:`f_interaction` -- a quadratic and a
+    bounded periodic term in addition to the interaction -- which is what makes
+    the separation between training and test performance visible as p grows.
+    """
+    return (3.0 * X[:, 0] - 6.0 * X[:, 1] + 4.0 * X[:, 2]
+            + 2.0 * X[:, 0] * X[:, 1] - 3.0 * X[:, 1] ** 2
+            + np.sin(X[:, 2]))
+
+
 MEAN_FUNCTIONS: Dict[str, Callable[[np.ndarray], np.ndarray]] = {
     "linear": f_linear,
     "interaction": f_interaction,
     "gam": f_gam,
+    "highdim_nonlinear": f_highdim_nonlinear,
 }
 
 
