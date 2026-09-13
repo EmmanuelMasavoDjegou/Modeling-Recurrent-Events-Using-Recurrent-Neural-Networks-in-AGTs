@@ -17,32 +17,13 @@ function
     U(b) = sum_i sum_j delta_i (Z_i - Z_j) 1{e_i <= e_j}
 
 is ``sum delta_i (e_i - e_j)^-`` with ``a^- = |a| 1(a < 0)``, which expands to
-``max(0, e_j - e_i)`` -- comparison minus anchor.  Differentiating confirms it:
-with ``e = Y - b'Z``, the active term ``e_j - e_i`` has gradient
-``Z_i - Z_j``, giving exactly ``U(b)``.  The two orientations are not
-equivalent; they push the predictor in opposite directions.
+``max(0, e_j - e_i)``.  Differentiating confirms it: with ``e = Y - b'Z``, the
+active term ``e_j - e_i`` has gradient ``Z_i - Z_j``, giving exactly ``U(b)``.
+The two orientations are not equivalent; they push the predictor in opposite
+directions, and the difference is large and grows with censoring.
+``simulation/loss_sensitivity.ipynb`` measures it against an oracle predictor.
 
-Empirically the difference is large and grows with censoring.  On the
-interaction setting with AR(1) dependence, test C-index under each orientation,
-against an oracle (true conditional mean) value:
-
-======================  ==========  ==========  ========
-Censoring               Reversed    As here     Oracle
-======================  ==========  ==========  ========
-25%                     0.882       0.940       0.940
-65%                     0.621       0.916       0.963
-======================  ==========  ==========  ========
-
-The orientation used here essentially attains oracle discrimination; the
-reverse loses a third of the gap at heavy censoring.  ``loss_sensitivity.ipynb``
-reproduces this comparison.
-
-**On the 1/(K_i* K_l*) normalisation.**  The
-notebook's loss computed an unweighted sum over sampled pairs, rescaled only by
-``(N_total - 1) / s`` and divided by the number of uncensored events.  That is a
-plain Gehan rank loss, not a weighted risk-set loss.
-
-The subject-level normalization is the mechanism by which the WRS
+**On the 1/(K_i* K_l*) normalisation.**  The subject-level normalization is the mechanism by which the WRS
 construction handles induced dependent censoring: it equalises each subject's
 contribution regardless of how many events that subject accrued, removing the
 over-representation of subjects with many short gaps.  Without it a subject

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Table 8 -- model capacity relative to sample size (Reviewer 1, #1).
+Table 8 -- model capacity relative to sample size.
 
 Sweeps L in {1,2} and d in {8,16,32,64} on both clinical datasets under the
 same repeated splits used for Tables 6 and 7, reporting the trainable
 parameter count alongside the number of training subjects.  That ratio is what
-the reviewer's concern is actually about: the L=2, d=64 configuration carries
+the concern is actually about: the L=2, d=64 configuration carries
 several thousand parameters and was inherited from simulations at
 n_train in {1000, 5000}, never re-tuned for cohorts of 128 and 403.
 
@@ -94,6 +94,12 @@ def main() -> None:
                     "params": gru_parameter_count(p, d, L),
                     "n_train": n_train,
                     "params_per_subject": gru_parameter_count(p, d, L) / max(n_train, 1),
+                    "cindex_per_split": [
+                        o.metrics["rnn_agt"]["test_cindex"] for o in outcomes
+                    ],
+                    "amse_per_split": [
+                        o.metrics["rnn_agt"]["test_amse"] for o in outcomes
+                    ],
                 }
             param_counts[(L, d)] = gru_parameter_count(
                 list(datasets.values())[0][1], d, L

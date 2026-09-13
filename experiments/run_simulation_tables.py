@@ -253,8 +253,14 @@ def main() -> None:
             "n_replicates": len(arr),
         }
 
+    # Persist the per-replicate values, not just the summaries. Any statistic
+    # not computed at run time is otherwise unrecoverable without repeating the
+    # whole grid, which for this driver is a day and a half of compute.
+    raw = {"|".join(map(str, k)): [list(map(float, v)) for v in vals]
+           for k, vals in acc.items()}
     with open(f"{args.out}.json", "w") as fh:
-        json.dump({"summary": summary, "args": vars(args)}, fh, indent=2)
+        json.dump({"summary": summary, "raw": raw, "args": vars(args)},
+                  fh, indent=2)
 
     for mf in args.mean_funcs:
         body = latex.simulation_table(

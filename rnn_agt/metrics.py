@@ -8,7 +8,7 @@ definitions are unchanged by the vectorisation:
 :func:`rnn_agt.diagnostics.check_cindex_agreement` asserts agreement against a
 literal transcription of the definition.
 
-A note on how training-set metrics are computed, since Reviewer 2 asked.  Both
+A note on how training-set metrics are computed.  Both
 functions take predictions produced by a single forward pass in evaluation
 mode after fitting is complete; neither accumulates anything during
 optimization.  The censoring distribution ``G`` is re-estimated on whichever

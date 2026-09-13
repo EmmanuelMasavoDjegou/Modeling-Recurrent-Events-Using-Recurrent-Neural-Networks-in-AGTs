@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tables 6 and 7 -- ablation ladder and repeated splits (AE #1, Reviewer 2 #4).
+Tables 6 and 7 -- ablation ladder and repeated splits.
 
 Both tables come from the same B repeated stratified splits, so they are
 internally consistent: the ablation increments in Table 6 are paired

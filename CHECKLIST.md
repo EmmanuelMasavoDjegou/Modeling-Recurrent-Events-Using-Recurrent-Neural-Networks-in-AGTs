@@ -20,10 +20,10 @@ Run everything from the repository root.
 
 | # | Label | Contents | Command | Slots | Done |
 |---|---|---|---|---|---|
-| 1 | `tab:nonlinear_interactions` | Interaction mean function | `run_simulation_tables.py --mean-funcs interaction` | 2 | ☐ |
-| 2 | `tab:GAM-type-Nonlinear` | GAM-type nonlinear | `run_simulation_tables.py --mean-funcs gam` | 2 | ☐ |
-| 3 | `tab:Linear-mean` | Linear mean function | `run_simulation_tables.py --mean-funcs linear` | 2 | ☐ |
-| 4 | `tab:subsampling_sensitivity` | Sub-sampling sensitivity | `simulation/subsampling_sensitivity.ipynb` | 2 | ☐ |
+| 1 | `tab:nonlinear_interactions` | Interaction mean function | `run_simulation_tables.py --mean-funcs interaction` | 0 | ☑ **filled**, SE 0.0005 |
+| 2 | `tab:GAM-type-Nonlinear` | GAM-type nonlinear | `run_simulation_tables.py --mean-funcs gam` | 0 | ☑ **filled**, SE 0.0006 |
+| 3 | `tab:Linear-mean` | Linear mean function | `run_simulation_tables.py --mean-funcs linear` | 0 | ☑ **filled**, SE 0.0013 |
+| 4 | `tab:subsampling_sensitivity` | Sub-sampling sensitivity | `run_subsampling_sensitivity.py` | 3 | ☐ |
 | 5 | `tab:depend_robust` | Dependence-mechanism robustness | `run_dependence_robustness.py` | 17 | ☐ |
 | 6 | `tab:ablation` | Ablation ladder | `run_ablation_and_splits.py` | 21 | ☐ |
 | 7 | `tab:repeated_splits` | Repeated splits + 5-fold CV | `run_ablation_and_splits.py` | 38 | ☐ |
@@ -150,9 +150,9 @@ units" claim, which came from the single split and no longer appears anywhere.
 **Read these before filling them.** They commit you in advance to reporting
 unfavourable findings: a null or negative Δ-history, an advantage that narrows
 once dependence stops being linear, smaller networks winning the capacity
-sweep. That is the strongest available answer to reviewers who suspected
-favourable design choices, but it is a real commitment. Soften them before
-submission if you are not prepared to honour it.
+sweep. Stating that standard in advance is what keeps the reported comparison
+honest, but it is a real commitment. Soften them before submission if you are
+not prepared to honour it.
 
 ### Lines 47 and 49
 
@@ -170,7 +170,13 @@ both at the end of its run:
 max Monte Carlo SE  C-index: 0.0041   AMSE: 0.0730
 ```
 
-Those two numbers fill that table's `\PH{max SE}` slots. Section 4.1 promises
+The footnotes report the C-index standard error only, which is what Section 4.1
+justifies. The drivers also persist every per-replicate value under `"raw"` in
+the JSON, so any statistic not computed at run time can be derived later without
+repeating the grid.
+
+That number fills the table's `\PH{max SE}` slot. Tables 1-3 are already
+filled: 0.0005, 0.0006 and 0.0013 respectively. Section 4.1 promises
 these, so a blank footnote is a visible broken promise.
 
 ---

@@ -115,7 +115,7 @@ request.
 | 1 | Interaction mean function | `experiments/run_simulation_tables.py` |
 | 2 | GAM-type nonlinear mean function | same |
 | 3 | Linear mean function | same |
-| 4 | Sub-sampling sensitivity | `simulation/subsampling_sensitivity.ipynb` |
+| 4 | Sub-sampling sensitivity | `experiments/run_subsampling_sensitivity.py` |
 | 5 | Dependence-mechanism robustness | `experiments/run_dependence_robustness.py` |
 | 6 | Ablation ladder | `experiments/run_ablation_and_splits.py` |
 | 7 | Repeated splits and 5-fold CV | same |
@@ -248,7 +248,8 @@ outcome. Run this before trusting any number the package produces.
 
 ```bash
 python experiments/run_simulation_tables.py --replicates 50      # Tables 1-3
-python experiments/run_dependence_robustness.py --replicates 50  # Table 5
+python experiments/run_subsampling_sensitivity.py --replicates 50  # Table 4
+python experiments/run_dependence_robustness.py --replicates 50   # Table 5
 ```
 
 Add `--quick` to either for a two-replicate pipeline test.

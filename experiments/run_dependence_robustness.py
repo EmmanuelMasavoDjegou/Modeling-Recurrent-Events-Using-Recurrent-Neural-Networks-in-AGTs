@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Table 5 -- robustness to the within-subject dependence mechanism (Reviewer 2, #3).
+Table 5 -- robustness to the within-subject dependence mechanism.
 
 Runs the interaction mean function at n_train = 1,000 with 50% incomplete
 follow-up under five dependence mechanisms, fitting all three rungs of the
