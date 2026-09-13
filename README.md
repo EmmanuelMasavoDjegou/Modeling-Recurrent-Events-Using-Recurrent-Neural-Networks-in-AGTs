@@ -249,6 +249,7 @@ outcome. Run this before trusting any number the package produces.
 ```bash
 python experiments/run_simulation_tables.py --replicates 50      # Tables 1-3
 python experiments/run_subsampling_sensitivity.py --replicates 50  # Table 4
+#   grid: s in {5,10,15,30}, b in {32,64,128}, two training sizes = 24 cells
 python experiments/run_dependence_robustness.py --replicates 50   # Table 5
 ```
 

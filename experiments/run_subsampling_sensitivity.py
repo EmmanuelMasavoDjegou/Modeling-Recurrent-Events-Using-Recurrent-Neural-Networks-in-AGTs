@@ -43,8 +43,10 @@ from rnn_agt import latex
 from rnn_agt.seeds import make_seeds
 from rnn_agt.train import TrainConfig, train_model
 
-#: Rows of Table 4.
-S_GRID = (5, 10, 15)
+#: Rows of Table 4. The grid includes the value used throughout the rest of the
+#: simulation study, so that the setting the study relies on is itself covered
+#: by the sensitivity analysis rather than assumed.
+S_GRID = (5, 10, 15, 30)
 B_GRID = (32, 64, 128)
 #: Columns: epoch checkpoints per training size, as in Tables 1-3.
 N_EPOCHS = {1000: (5, 10), 5000: (2, 3)}
@@ -53,8 +55,8 @@ N_EPOCHS = {1000: (5, 10), 5000: (2, 3)}
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--replicates", type=int, default=50)
-    ap.add_argument("--s-grid", type=int, nargs="+", default=list(S_GRID))
-    ap.add_argument("--b-grid", type=int, nargs="+", default=list(B_GRID))
+    ap.add_argument("--s-grid", type=int, nargs="+", default=None)
+    ap.add_argument("--b-grid", type=int, nargs="+", default=None)
     ap.add_argument("--n-test", type=int, default=2000)
     ap.add_argument("--mean-func", default="interaction")
     ap.add_argument("--error", default="normal")
@@ -72,8 +74,18 @@ def main() -> None:
 
     if args.quick:
         args.replicates = 2
-        args.s_grid, args.b_grid = [5, 10], [32, 64]
         args.n_test = 200
+        # Only shrink the grid if the caller did not ask for a specific one,
+        # so that --quick can be combined with an explicit --s-grid.
+        if args.s_grid is None:
+            args.s_grid = [5, 10]
+        if args.b_grid is None:
+            args.b_grid = [32, 64]
+
+    if args.s_grid is None:
+        args.s_grid = list(S_GRID)
+    if args.b_grid is None:
+        args.b_grid = list(B_GRID)
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
 
