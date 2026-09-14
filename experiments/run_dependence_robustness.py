@@ -66,7 +66,11 @@ def main() -> None:
     ap.add_argument("--replicates", type=int, default=50)
     ap.add_argument("--n-train", type=int, default=1000)
     ap.add_argument("--n-test", type=int, default=2000)
-    ap.add_argument("--censoring", type=float, default=0.50)
+    ap.add_argument("--censoring", type=float, default=0.25,
+                    help="Matches the sub-sampling study, and is the level at "
+                         "which differences between mechanisms are widest: "
+                         "concordance compresses toward its ceiling as "
+                         "follow-up becomes more incomplete.")
     ap.add_argument("--mean-func", default="interaction")
     ap.add_argument("--error", default="normal")
     ap.add_argument("--epochs", type=int, default=10)

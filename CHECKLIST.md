@@ -23,7 +23,7 @@ Run everything from the repository root.
 | 1 | `tab:nonlinear_interactions` | Interaction mean function | `run_simulation_tables.py --mean-funcs interaction` | 0 | ☑ **filled**, SE 0.0005 |
 | 2 | `tab:GAM-type-Nonlinear` | GAM-type nonlinear | `run_simulation_tables.py --mean-funcs gam` | 0 | ☑ **filled**, SE 0.0006 |
 | 3 | `tab:Linear-mean` | Linear mean function | `run_simulation_tables.py --mean-funcs linear` | 0 | ☑ **filled**, SE 0.0013 |
-| 4 | `tab:subsampling_sensitivity` | Sub-sampling sensitivity | `run_subsampling_sensitivity.py` | 27 | ☐ |
+| 4 | `tab:subsampling_sensitivity` | Sub-sampling sensitivity | `run_subsampling_sensitivity.py` | 0 | ☑ **filled**, SE 0.0009 |
 | 5 | `tab:depend_robust` | Dependence-mechanism robustness | `run_dependence_robustness.py` | 17 | ☐ |
 | 6 | `tab:ablation` | Ablation ladder | `run_ablation_and_splits.py` | 21 | ☐ |
 | 7 | `tab:repeated_splits` | Repeated splits + 5-fold CV | `run_ablation_and_splits.py` | 38 | ☐ |
