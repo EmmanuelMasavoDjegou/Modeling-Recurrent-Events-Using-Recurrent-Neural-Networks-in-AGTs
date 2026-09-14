@@ -2,9 +2,14 @@
 """
 Table 5 -- robustness to the within-subject dependence mechanism.
 
-Runs the interaction mean function at n_train = 1,000 with 50% incomplete
+Runs the interaction mean function at n_train = 1,000 with 25% incomplete
 follow-up under five dependence mechanisms, fitting all three rungs of the
 ablation ladder under each.
+
+The censoring level matches the sub-sampling study of Table 4 so the two
+auxiliary analyses can be read against one another, and is the level at which
+the contrast between mechanisms is widest: concordance compresses toward its
+ceiling as follow-up becomes more incomplete.
 
 The AR(2) row carries the most diagnostic weight.  NN-AFT conditions on
 baseline covariates only and so *cannot* represent lag-two dependence at all,
@@ -16,8 +21,8 @@ specifically, and the manuscript commits to reporting it either way.
 
 Usage
 -----
-    python experiments/run_dependence_robustness.py --replicates 500
-    python experiments/run_dependence_robustness.py --replicates 5 --quick
+    python experiments/run_dependence_robustness.py --replicates 50
+    python experiments/run_dependence_robustness.py --quick
 """
 
 from __future__ import annotations

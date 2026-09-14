@@ -15,13 +15,14 @@ COST
 ----
 The full grid is 3 mean functions x 3 errors x 2 dependence x 3 censoring x 2
 sizes = 108 cells, times `--replicates`. At 500 replicates this is a cluster
-job, not a laptop one. Use `--replicates 20` for a first look and
-`--mean-funcs interaction` to regenerate one table at a time.
+job, not a laptop one. Use a smaller `--replicates` for a first look and
+`--mean-funcs interaction` to regenerate one table at a time; the three mean
+functions are independent and can be run in parallel.
 
 Usage
 -----
-    python experiments/run_simulation_tables.py --replicates 500
-    python experiments/run_simulation_tables.py --replicates 20 --quick
+    python experiments/run_simulation_tables.py --replicates 50
+    python experiments/run_simulation_tables.py --quick
 """
 
 from __future__ import annotations
