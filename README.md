@@ -162,8 +162,10 @@ real-data stages must run in and the prose placeholders no script fills.
 Figures 1 and 5 are drawn in LaTeX and have no code file; edit them in the
 manuscript source. The other three read their panels from `manuscript/images/`.
 
-Both notebooks write to `manuscript/images/` when that directory exists and to
-`results/` otherwise. **The filenames are fixed by the `\includegraphics` calls
+Both drivers write to `manuscript/images/` when that directory exists and to
+`results/` otherwise; `--outdir` overrides. Each also saves the underlying
+curves as JSON alongside the panels, so a figure can be restyled without
+refitting. **The filenames are fixed by the `\includegraphics` calls
 in the manuscript and must not be changed.** Note that `log` in the Figure 2
 filenames abbreviates the *logistic* error distribution, not a log transform,
 and that the unsuffixed Figure 3 names are easy to collide with -- nothing else
@@ -251,6 +253,8 @@ python experiments/run_simulation_tables.py --replicates 50      # Tables 1-3
 python experiments/run_subsampling_sensitivity.py --replicates 50  # Table 4
 #   grid: s in {5,10,15,30}, b in {32,64,128}, two training sizes = 24 cells
 python experiments/run_dependence_robustness.py --replicates 50   # Table 5
+python experiments/run_loss_figures.py                            # Figure 2
+python experiments/run_highdim_figures.py                         # Figures 3-4
 ```
 
 Add `--quick` to either for a two-replicate pipeline test.

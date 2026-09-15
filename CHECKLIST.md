@@ -59,9 +59,9 @@ stay blank.
 | # | Label | Contents | Produced by | Done |
 |---|---|---|---|---|
 | 1 | `fig:deep_gru` | Unrolled stacked GRU architecture | TikZ in the manuscript | n/a |
-| 2 | `fig:loss_all_layout` | Training loss, 9 panels | `simulation/figures.ipynb` | ☐ |
-| 3 | `fig:highdim_linear` | High-dim sweep, linear DGP | `simulation/high_dimensional.ipynb` | ☐ |
-| 4 | `fig:highdim_nonlinear` | High-dim sweep, nonlinear DGP | same notebook | ☐ |
+| 2 | `fig:loss_all_layout` | Training loss, 9 panels | `run_loss_figures.py` | ☐ |
+| 3 | `fig:highdim_linear` | High-dim sweep, linear signal | `run_highdim_figures.py` | ☐ |
+| 4 | `fig:highdim_nonlinear` | High-dim sweep, nonlinear signal | same driver | ☐ |
 | 5 | `fig:nn_agt` | NN-AGT architecture | TikZ in the manuscript | n/a |
 
 Figures 1 and 5 need no code; edit them in the manuscript source.
@@ -72,7 +72,7 @@ Both notebooks write to `manuscript/images/` if it exists, otherwise
 `results/`. **Filenames are fixed by the `\includegraphics` calls and must not
 be changed.**
 
-Figure 2 — `simulation/figures.ipynb`:
+Figure 2 — `experiments/run_loss_figures.py`:
 
 ```
 loss_normal_nonlinear.png      loss_gumbel_nonlinear.png      loss_log_nonlinear.png
@@ -80,13 +80,13 @@ loss_normal_n1000_gam.png      loss_gumbel_n1000_gam.png      loss_log_n1000_gam
 loss_normal_n1000_linear.png   loss_gumbel_n1000_linear.png   loss_log_n1000_linear.png
 ```
 
-Figure 3 — `simulation/high_dimensional.ipynb`, linear DGP:
+Figure 3 — `experiments/run_highdim_figures.py`, linear signal:
 
 ```
 amse_c-index_plots.png   train_test_cindex.png   train_test_amse.png   loss_trajectorie.png
 ```
 
-Figure 4 — same notebook, nonlinear DGP, `1` suffix:
+Figure 4 — same driver, nonlinear signal, `1` suffix:
 
 ```
 amse_c-index_plots1.png  train_test_cindex1.png  train_test_amse1.png  loss_trajectorie1.png

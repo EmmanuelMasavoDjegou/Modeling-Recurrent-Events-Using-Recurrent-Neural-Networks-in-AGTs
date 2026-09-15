@@ -14,3 +14,6 @@ results/
 The `.json` files are the ones worth backing up: they hold the raw
 per-replicate numbers, so any statistic not computed at run time can be derived
 later without repeating the grid.
+
+Figure panels are written to `manuscript/images/` when that directory exists
+and here otherwise.

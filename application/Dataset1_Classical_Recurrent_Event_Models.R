@@ -13,8 +13,8 @@
 # This script therefore:
 #
 #   1. Reads split assignments written by the Python driver, so the Cox
-#      models are fitted on exactly the same training partitions as AFT-WRS,
-#      NN-AFT and RNN-AGT. Table 8's paired differences are only computable
+#      models are fitted on exactly the same training partitions as AGT-WRS,
+#      NN-AGT and RNN-AGT. Table 7's paired differences are only computable
 #      if every method sees the same splits.
 #
 #   2. Does NOT compute a concordance index. It exports the linear
