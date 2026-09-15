@@ -224,7 +224,13 @@ write.csv(data_cp, "data/crc.csv", row.names = FALSE)
 
 
 export_df <- if (exists("data_cp")) data_cp else cgd_data
-covariate_cols <- c("Z1","Z2","Z3","Z4")
+# Z4 (Charlson comorbidity index) is constructed above but deliberately NOT
+# exported. Section 5.1 of the manuscript describes three CRC covariates --
+# chemotherapy, sex and Dukes' staging -- and the Cox comparators are fitted on
+# those three. Exporting a fourth would give the AFT models an information set
+# the Cox models do not have, making the comparison in Tables 6 and 7 invalid.
+# Add it back here and to the Cox model formulas together, or not at all.
+covariate_cols <- c("Z1","Z2","Z3")
 
 # The Python loader keys on `delta`; `event` is retained for the R models.
 export_df$delta <- as.integer(export_df$event)

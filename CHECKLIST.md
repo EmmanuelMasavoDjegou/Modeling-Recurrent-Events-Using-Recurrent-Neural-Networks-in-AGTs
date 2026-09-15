@@ -59,9 +59,9 @@ stay blank.
 | # | Label | Contents | Produced by | Done |
 |---|---|---|---|---|
 | 1 | `fig:deep_gru` | Unrolled stacked GRU architecture | TikZ in the manuscript | n/a |
-| 2 | `fig:loss_all_layout` | Training loss, 9 panels | `run_loss_figures.py` | ☐ |
-| 3 | `fig:highdim_linear` | High-dim sweep, linear signal | `run_highdim_figures.py` | ☐ |
-| 4 | `fig:highdim_nonlinear` | High-dim sweep, nonlinear signal | same driver | ☐ |
+| 2 | `fig:loss_all_layout` | Training loss, 9 panels | `run_loss_figures.py` | ☑ **done** |
+| 3 | `fig:highdim_linear` | High-dim sweep, linear signal | `run_highdim_figures.py` | ☑ **done** |
+| 4 | `fig:highdim_nonlinear` | High-dim sweep, nonlinear signal | same driver | ☑ **done** |
 | 5 | `fig:nn_agt` | NN-AGT architecture | TikZ in the manuscript | n/a |
 
 Figures 1 and 5 need no code; edit them in the manuscript source.

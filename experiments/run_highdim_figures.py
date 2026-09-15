@@ -169,15 +169,20 @@ def main() -> None:
                     dpi=args.dpi)
         plt.close(fig)
 
-        fig, ax = plt.subplots(figsize=(4.6, 3.4))
-        sc = ax.scatter(df.test_cindex, df.test_amse, c=np.log10(df.p),
-                        cmap="viridis", s=70)
-        for _, r in df.iterrows():
-            ax.annotate(f"{int(r.p)}", (r.test_cindex, r.test_amse),
-                        fontsize=7, xytext=(3, 3), textcoords="offset points")
-        ax.set_xlabel("test IPCW C-index"); ax.set_ylabel("test AMSE")
-        ax.grid(alpha=.3)
-        fig.colorbar(sc, ax=ax, label=r"$\log_{10} p$")
+        # Panel (a): the two metrics against p, side by side. Test only --
+        # panels (b) and (c) carry the train curves, so including them here
+        # would duplicate those panels rather than add anything.
+        # C-index left, AMSE right, matching the subcaption in the manuscript.
+        fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.2))
+        axes[0].plot(df.p, df.test_cindex, marker="s", color="tab:orange")
+        axes[0].axhline(0.5, ls="--", c="grey", lw=1)
+        axes[0].set_xscale("log")
+        axes[0].set_xlabel(r"covariate dimension $p$")
+        axes[0].set_ylabel("test IPCW C-index"); axes[0].grid(alpha=.3)
+        axes[1].plot(df.p, df.test_amse, marker="s", color="tab:orange")
+        axes[1].set_xscale("log")
+        axes[1].set_xlabel(r"covariate dimension $p$")
+        axes[1].set_ylabel("test AMSE"); axes[1].grid(alpha=.3)
         fig.tight_layout()
         fig.savefig(os.path.join(outdir, f"amse_c-index_plots{suffix}.png"),
                     dpi=args.dpi)

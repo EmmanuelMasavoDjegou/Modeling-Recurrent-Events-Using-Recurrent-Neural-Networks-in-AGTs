@@ -111,7 +111,9 @@ def main() -> None:
         ax.plot(range(1, len(curve) + 1), curve, lw=1.4, color="tab:blue")
         ax.set_xlabel("epoch")
         ax.set_ylabel("mini-batch Gehan-WRS loss")
-        ax.set_title(f"{mf}, {err}", fontsize=10)
+        # No in-plot title: the manuscript figure already labels every panel,
+        # with a row heading per mean function and "(a) Normal errors" beneath
+        # each panel, so a title would duplicate it.
         ax.grid(alpha=.3)
         fig.tight_layout()
         fig.savefig(os.path.join(outdir, fname), dpi=args.dpi)
