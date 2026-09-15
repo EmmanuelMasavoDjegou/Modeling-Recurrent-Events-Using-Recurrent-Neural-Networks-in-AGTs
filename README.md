@@ -38,13 +38,13 @@ so the contribution of each can be measured separately.
 
 | Model | Nonlinear | History | Predictor |
 |---|---|---|---|
-| `AFTWRS` | no | no | `theta' z_i` |
-| `NNAFT` | yes | no | `MLP(z_i)` |
+| `AGTWRS` | no | no | `theta' z_i` |
+| `NNAGT` | yes | no | `MLP(z_i)` |
 | `RNNAGT` | yes | yes | `GRU(z_i, prior log-gaps)` |
 
 All three train under the identical objective, sampler and optimizer, so a
 difference between adjacent rungs is attributable to the capability that rung
-adds. `AFTWRS` versus `NNAFT` isolates nonlinearity; `NNAFT` versus `RNNAGT`
+adds. `AGTWRS` versus `NNAGT` isolates nonlinearity; `NNAGT` versus `RNNAGT`
 isolates GRU-based history modeling.
 
 ---
@@ -56,7 +56,7 @@ isolates GRU-based history modeling.
 ├── rnn_agt/                     # the package
 │   ├── seeds.py                 # four independent RNG streams from one master seed
 │   ├── data.py                  # data-generating mechanisms, censoring, tau calibration
-│   ├── models.py                # AFTWRS, NNAFT, RNNAGT
+│   ├── models.py                # AGTWRS, NNAGT, RNNAGT
 │   ├── losses.py                # Gehan-WRS objective, exact and subsampled
 │   ├── sampling.py              # pair sampler with explicit inclusion probabilities
 │   ├── metrics.py               # vectorised IPCW C-index and AMSE
@@ -157,7 +157,7 @@ real-data stages must run in and the prose placeholders no script fills.
 | 2 | Training loss, all mean functions x error distributions (9 panels) | `simulation/figures.ipynb` | `loss_{normal,gumbel,log}_nonlinear.png`, `..._n1000_gam.png`, `..._n1000_linear.png` |
 | 3 | High-dimensional sweep, linear DGP (4 panels) | `simulation/high_dimensional.ipynb` | `amse_c-index_plots.png`, `train_test_cindex.png`, `train_test_amse.png`, `loss_trajectorie.png` |
 | 4 | High-dimensional sweep, nonlinear DGP (4 panels) | same notebook | the same four names with a `1` suffix |
-| 5 | NN-AFT architecture | TikZ in the manuscript | none |
+| 5 | NN-AGT architecture | TikZ in the manuscript | none |
 
 Figures 1 and 5 are drawn in LaTeX and have no code file; edit them in the
 manuscript source. The other three read their panels from `manuscript/images/`.
@@ -363,14 +363,14 @@ in `cox_bridge.score_cox_predictions`. Never negate it in R as well.
 `check_orientation` warns if the mean Cox C-index falls below 0.45, which is
 what a double negation looks like.
 
-**AFT-WRS needs a larger learning rate.** With three parameters against the
+**AGT-WRS needs a larger learning rate.** With three parameters against the
 GRU's tens of thousands, it barely moves at `3e-4`; the drivers default it to
 `1e-2` via `--lr-linear`. An undertrained comparator would flatter RNN-AGT for
 the wrong reason, so confirm it has converged before reporting it. On a linear
 data-generating process with known coefficients it recovers the correct signs
 and ratio.
 
-**NN-AFT is parameter-matched to the GRU** via `models.matched_mlp_width`, so a
+**NN-AGT is parameter-matched to the GRU** via `models.matched_mlp_width`, so a
 gap between those two rungs cannot be attributed to one model simply being
 larger.
 

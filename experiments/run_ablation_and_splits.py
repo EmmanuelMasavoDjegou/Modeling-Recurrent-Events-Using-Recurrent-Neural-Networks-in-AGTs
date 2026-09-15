@@ -53,8 +53,8 @@ from rnn_agt.evaluation import (
 )
 from rnn_agt.train import TrainConfig
 
-MODELS = ("aft_wrs", "nn_aft", "rnn_agt")
-MODEL_LABELS = {"aft_wrs": "AFT-WRS", "nn_aft": "NN-AFT", "rnn_agt": "RNN-AGT"}
+MODELS = ("agt_wrs", "nn_agt", "rnn_agt")
+MODEL_LABELS = {"agt_wrs": "AGT-WRS", "nn_agt": "NN-AGT", "rnn_agt": "RNN-AGT"}
 
 
 def prepare_real_data(
@@ -68,7 +68,7 @@ def prepare_real_data(
 ):
     """Load a preprocessed gap-time CSV into the subject-list representation.
 
-    Standardizing covariates is on by default.  It does not change AFT-WRS
+    Standardizing covariates is on by default.  It does not change AGT-WRS
     (a linear predictor absorbs the scaling) but it materially affects the
     networks, whose initialization assumes inputs of order one.  Leaving raw
     covariates of wildly different scales is a common reason a network
@@ -126,8 +126,8 @@ def build_configs(args) -> Dict[str, TrainConfig]:
         pair_batch_b=args.batch, device=args.device,
     )
     return {
-        "aft_wrs": TrainConfig(model="aft_wrs", lr=args.lr_linear, **common),
-        "nn_aft": TrainConfig(model="nn_aft", lr=args.lr, hidden_dim=args.hidden,
+        "agt_wrs": TrainConfig(model="agt_wrs", lr=args.lr_linear, **common),
+        "nn_agt": TrainConfig(model="nn_agt", lr=args.lr, hidden_dim=args.hidden,
                               gru_layers=args.layers, **common),
         "rnn_agt": TrainConfig(model="rnn_agt", lr=args.lr, hidden_dim=args.hidden,
                                gru_layers=args.layers, **common),
@@ -227,8 +227,8 @@ def main() -> None:
 
         deltas[ds] = {}
         for contrast, (a, b) in (
-            ("nonlinearity", ("nn_aft", "aft_wrs")),
-            ("history", ("rnn_agt", "nn_aft")),
+            ("nonlinearity", ("nn_agt", "agt_wrs")),
+            ("history", ("rnn_agt", "nn_agt")),
         ):
             for metric, key in (("test_cindex", "cindex"), ("test_amse", "amse")):
                 deltas[ds][f"{contrast}:{key}"] = paired_difference(

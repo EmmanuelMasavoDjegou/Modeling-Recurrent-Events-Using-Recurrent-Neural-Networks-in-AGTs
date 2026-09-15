@@ -80,7 +80,7 @@ def dependence_table(
     results: Dict[str, Dict[str, Dict[str, float]]],
     mechanisms: Sequence[str],
     mechanism_labels: Dict[str, str],
-    models: Sequence[str] = ("aft_wrs", "nn_aft", "rnn_agt"),
+    models: Sequence[str] = ("agt_wrs", "nn_agt", "rnn_agt"),
 ) -> str:
     """Table 5: dependence-mechanism robustness.
 
@@ -109,8 +109,8 @@ def ablation_table(
     ``deltas[dataset][contrast]`` holds paired differences.
     """
     spec = [
-        ("AFT-WRS", "aft_wrs", "--", "--"),
-        ("NN-AFT", "nn_aft", r"\checkmark", "--"),
+        ("AGT-WRS", "agt_wrs", "--", "--"),
+        ("NN-AGT", "nn_agt", r"\checkmark", "--"),
         ("RNN-AGT", "rnn_agt", r"\checkmark", r"\checkmark"),
     ]
     rows = []
@@ -127,8 +127,8 @@ def ablation_table(
 
     delta_rows = []
     for contrast, label in (
-        ("nonlinearity", r"$\Delta$ nonlinearity (NN-AFT $-$ AFT-WRS)"),
-        ("history", r"$\Delta$ history (RNN-AGT $-$ NN-AFT)"),
+        ("nonlinearity", r"$\Delta$ nonlinearity (NN-AGT $-$ AGT-WRS)"),
+        ("history", r"$\Delta$ history (RNN-AGT $-$ NN-AGT)"),
     ):
         cells = [rf"\multicolumn{{3}}{{l}}{{{label}}}"]
         for ds in datasets:

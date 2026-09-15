@@ -1,7 +1,7 @@
 """
 Training loop, shared by all three model classes.
 
-One trainer drives AFT-WRS, NN-AFT and RNN-AGT.  That is deliberate: if each
+One trainer drives AGT-WRS, NN-AGT and RNN-AGT.  That is deliberate: if each
 rung of the ablation had its own optimizer, stopping rule or tie handling,
 differences between rungs would confound the capability under test with
 incidental fitting differences, and the ablation would not isolate what

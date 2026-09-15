@@ -11,7 +11,7 @@ auxiliary analyses can be read against one another, and is the level at which
 the contrast between mechanisms is widest: concordance compresses toward its
 ceiling as follow-up becomes more incomplete.
 
-The AR(2) row carries the most diagnostic weight.  NN-AFT conditions on
+The AR(2) row carries the most diagnostic weight.  NN-AGT conditions on
 baseline covariates only and so *cannot* represent lag-two dependence at all,
 whereas RNN-AGT can.  A gap that widens at AR(2) relative to AR(1) is direct
 evidence that the recurrent state is doing the work claimed for it.  If instead
@@ -43,7 +43,7 @@ from rnn_agt.seeds import make_seeds
 from rnn_agt.train import TrainConfig, train_model
 
 MECHANISMS = ("frailty", "ar1", "nar1", "ar2", "event_dependent")
-MODELS = ("aft_wrs", "nn_aft", "rnn_agt")
+MODELS = ("agt_wrs", "nn_agt", "rnn_agt")
 
 
 def build_configs(args) -> dict:
@@ -54,9 +54,9 @@ def build_configs(args) -> dict:
         device=args.device,
     )
     return {
-        "aft_wrs": TrainConfig(model="aft_wrs", lr=args.lr_linear, **common),
-        "nn_aft": TrainConfig(
-            model="nn_aft", lr=args.lr, hidden_dim=args.hidden,
+        "agt_wrs": TrainConfig(model="agt_wrs", lr=args.lr_linear, **common),
+        "nn_agt": TrainConfig(
+            model="nn_agt", lr=args.lr, hidden_dim=args.hidden,
             gru_layers=args.layers, **common
         ),
         "rnn_agt": TrainConfig(
@@ -85,7 +85,7 @@ def main() -> None:
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--lr-linear", type=float, default=1e-2,
-                    help="AFT-WRS needs a larger step; see README.")
+                    help="AGT-WRS needs a larger step; see README.")
     ap.add_argument("--seed", type=int, default=20260903)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--out", default="results/table5_dependence")

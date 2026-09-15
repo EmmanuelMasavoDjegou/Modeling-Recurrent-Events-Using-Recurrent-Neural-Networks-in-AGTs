@@ -4,15 +4,15 @@ The three model classes forming the ablation ladder (Section 5.5).
 ======================  ==========  =========  ================================
 Model                   Nonlinear   History    Predictor
 ======================  ==========  =========  ================================
-``AFTWRS``              no          no         theta' z_i
-``NNAFT``               yes         no         MLP(z_i)
+``AGTWRS``              no          no         theta' z_i
+``NNAGT``               yes         no         MLP(z_i)
 ``RNNAGT``              yes         yes        GRU(z_i, prior log-gaps)
 ======================  ==========  =========  ================================
 
 All three are trained with the *identical* Gehan-WRS objective and the
 identical pair sampler, so a difference between adjacent rungs is attributable
 to the capability that rung adds and nothing else.  That is the whole point of
-the comparison, and it is why ``AFTWRS`` is implemented here as a torch module
+the comparison, and it is why ``AGTWRS`` is implemented here as a torch module
 rather than fitted by a separate rank-regression routine: an external
 implementation would differ in optimizer, convergence criterion and tie
 handling, and those differences would contaminate the contrast.
@@ -102,7 +102,7 @@ class RNNAGT(nn.Module):
         return True
 
 
-class NNAFT(nn.Module):
+class NNAGT(nn.Module):
     """Feed-forward predictor: nonlinear covariate effects, no history.
 
     This is the middle rung of the ablation.  It receives the baseline
@@ -112,7 +112,7 @@ class NNAFT(nn.Module):
 
     ``hidden_dims`` defaults to ``None``, in which case the width is chosen by
     :func:`matched_mlp_width` to bring the parameter count close to a reference
-    GRU.  Matching capacity matters: if NN-AFT were much smaller, a gap in its
+    GRU.  Matching capacity matters: if NN-AGT were much smaller, a gap in its
     favour to RNN-AGT could be read as a capacity effect rather than a history
     effect, and the ablation would not isolate what it claims to.
     """
@@ -157,7 +157,7 @@ class NNAFT(nn.Module):
         return False
 
 
-class AFTWRS(nn.Module):
+class AGTWRS(nn.Module):
     """Linear accelerated gap-time predictor: no nonlinearity, no history.
 
     The bottom rung, and the model of Lyu et al. (2018) that RNN-AGT extends.
@@ -221,24 +221,24 @@ def matched_mlp_width(cov_dim: int, hidden_dim: int, gru_layers: int) -> int:
 
 
 MODEL_REGISTRY = {
-    "aft_wrs": AFTWRS,
-    "nn_aft": NNAFT,
+    "agt_wrs": AGTWRS,
+    "nn_agt": NNAGT,
     "rnn_agt": RNNAGT,
 }
 
 MODEL_LABELS = {
-    "aft_wrs": "AFT-WRS",
-    "nn_aft": "NN-AFT",
+    "agt_wrs": "AGT-WRS",
+    "nn_agt": "NN-AGT",
     "rnn_agt": "RNN-AGT",
 }
 
 
 def build_model(kind: str, cov_dim: int, **kwargs) -> nn.Module:
     """Construct a model by name, passing only the kwargs it accepts."""
-    if kind == "aft_wrs":
-        return AFTWRS(cov_dim)
-    if kind == "nn_aft":
-        return NNAFT(
+    if kind == "agt_wrs":
+        return AGTWRS(cov_dim)
+    if kind == "nn_agt":
+        return NNAGT(
             cov_dim,
             hidden_dims=kwargs.get("hidden_dims"),
             reference_hidden=kwargs.get("hidden_dim", 64),

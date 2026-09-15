@@ -24,7 +24,7 @@ Run everything from the repository root.
 | 2 | `tab:GAM-type-Nonlinear` | GAM-type nonlinear | `run_simulation_tables.py --mean-funcs gam` | 0 | ☑ **filled**, SE 0.0006 |
 | 3 | `tab:Linear-mean` | Linear mean function | `run_simulation_tables.py --mean-funcs linear` | 0 | ☑ **filled**, SE 0.0013 |
 | 4 | `tab:subsampling_sensitivity` | Sub-sampling sensitivity | `run_subsampling_sensitivity.py` | 0 | ☑ **filled**, SE 0.0009 |
-| 5 | `tab:depend_robust` | Dependence-mechanism robustness | `run_dependence_robustness.py` | 17 | ☐ |
+| 5 | `tab:depend_robust` | Dependence-mechanism robustness | `run_dependence_robustness.py` | 0 | ☑ **filled**, SE 0.0010 |
 | 6 | `tab:ablation` | Ablation ladder | `run_ablation_and_splits.py` | 21 | ☐ |
 | 7 | `tab:repeated_splits` | Repeated splits + 5-fold CV | `run_ablation_and_splits.py` | 38 | ☐ |
 | 8 | `tab:capacity` | Capacity sweep | `run_capacity_sweep.py` | 40 | ☐ |
@@ -62,7 +62,7 @@ stay blank.
 | 2 | `fig:loss_all_layout` | Training loss, 9 panels | `simulation/figures.ipynb` | ☐ |
 | 3 | `fig:highdim_linear` | High-dim sweep, linear DGP | `simulation/high_dimensional.ipynb` | ☐ |
 | 4 | `fig:highdim_nonlinear` | High-dim sweep, nonlinear DGP | same notebook | ☐ |
-| 5 | `fig:nn_aft` | NN-AFT architecture | TikZ in the manuscript | n/a |
+| 5 | `fig:nn_agt` | NN-AGT architecture | TikZ in the manuscript | n/a |
 
 Figures 1 and 5 need no code; edit them in the manuscript source.
 
@@ -110,7 +110,7 @@ These are not filled by any script.
 | 2021 | PyTorch version |
 | 2025 | R version |
 | 2025 | `survival` version |
-| 2026 | AFT-WRS implementation and version |
+| 2026 | AGT-WRS implementation and version |
 | 2027 | CPU/GPU model, cores, RAM |
 | 2028 | Runtime, full simulation suite |
 | 2029 | Runtime, two data analyses |
