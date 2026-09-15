@@ -191,7 +191,24 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Requires Python 3.10 or newer.
+Requires Python 3.10 or newer. The versions used to produce the reported
+results, which are the ones quoted in Section 5.3 of the manuscript:
+
+| Component | Version |
+|---|---|
+| Python | 3.12.3 |
+| PyTorch | 2.14.0 |
+| NumPy | 2.4.4 |
+| pandas | 3.0.2 |
+| matplotlib | 3.10.8 |
+
+Record your own with:
+
+```bash
+python -c "import sys, torch, numpy, pandas, matplotlib as m; \
+print(sys.version.split()[0], torch.__version__, numpy.__version__, \
+pandas.__version__, m.__version__)"
+```
 
 ### R
 

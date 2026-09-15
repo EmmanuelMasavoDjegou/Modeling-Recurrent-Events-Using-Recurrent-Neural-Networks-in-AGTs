@@ -1,6 +1,9 @@
 # Pinned for reproducibility. These versions fill the placeholders in
 # Section 5.3 of the manuscript.
+#
+# Every entry is imported directly by the package, the drivers or the
+# notebooks; nothing here is carried for a dependency that no longer exists.
 torch==2.14.0
 numpy>=1.24,<3
 pandas>=2.0
-scipy>=1.10
+matplotlib>=3.7
