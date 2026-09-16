@@ -326,21 +326,29 @@ python experiments/run_ablation_and_splits.py \
     --cgd data/cgd.csv --crc data/crc.csv \
     --splits 200 --splits-out results/splits
 
-# 3. fit the Cox models on those same splits, exporting held-out
-#    linear predictors
+# 3. fit the Cox models on those same splits and on the same CV folds,
+#    exporting linear predictors for both partitions of each
 Rscript application/Dataset1_Classical_Recurrent_Event_Models.R \
     --data data/crc.csv --splits results/splits/splits_crc.csv \
     --out results/cox_lp_crc.csv
+Rscript application/Dataset1_Classical_Recurrent_Event_Models.R \
+    --data data/crc.csv --splits results/splits/folds_crc.csv \
+    --out results/cox_cv_crc.csv
 Rscript application/Dataset2_Classical_Recurrent_Event_Models.R \
     --data data/cgd.csv --splits results/splits/splits_cgd.csv \
     --out results/cox_lp_cgd.csv
+Rscript application/Dataset2_Classical_Recurrent_Event_Models.R \
+    --data data/cgd.csv --splits results/splits/folds_cgd.csv \
+    --out results/cox_cv_cgd.csv
 
 # 4. re-run stage 2 with the Cox predictors merged in
 python experiments/run_ablation_and_splits.py \
     --cgd data/cgd.csv --crc data/crc.csv \
     --splits 200 --splits-out results/splits \
     --cox-lp-cgd results/cox_lp_cgd.csv \
-    --cox-lp-crc results/cox_lp_crc.csv
+    --cox-lp-crc results/cox_lp_crc.csv \
+    --cox-cv-cgd results/cox_cv_cgd.csv \
+    --cox-cv-crc results/cox_cv_crc.csv
 
 # Table 8
 python experiments/run_capacity_sweep.py \

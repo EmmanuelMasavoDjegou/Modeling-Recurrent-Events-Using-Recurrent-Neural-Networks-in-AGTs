@@ -53,7 +53,7 @@ from typing import Dict, List, Optional, Sequence
 import numpy as np
 import pandas as pd
 
-from .evaluation import SplitOutcome, stratified_split
+from .evaluation import SplitOutcome, stratified_folds, stratified_split
 from .metrics import ipcw_cindex
 from .seeds import make_seeds
 
@@ -103,6 +103,36 @@ def write_splits(
     return df
 
 
+def write_cv_folds(
+    subjects: List[Dict],
+    subject_ids: Sequence[int],
+    path: str,
+    master_seed: int,
+    k: int = 5,
+) -> pd.DataFrame:
+    """Write k-fold assignments in the same schema as :func:`write_splits`.
+
+    Each fold becomes one ``split_id``, with its own subjects marked ``test``
+    and the rest ``train``. The R script therefore needs no modification: it
+    reads the same three columns and fits the same models. Reusing the split
+    format rather than adding a second code path means the cross-validated and
+    repeated-split Cox estimates cannot diverge through an inconsistency
+    between two implementations.
+    """
+    rng = make_seeds(master_seed).split()
+    folds = stratified_folds(subjects, k, rng)
+    ids = np.asarray(subject_ids)
+    rows = []
+    for f, val_idx in enumerate(folds):
+        val = set(int(i) for i in val_idx)
+        for i in range(len(subjects)):
+            rows.append((f, int(ids[i]), "test" if i in val else "train"))
+    df = pd.DataFrame(rows, columns=["split_id", "id", "partition"])
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    df.to_csv(path, index=False)
+    return df
+
+
 def splits_to_index(
     df: pd.DataFrame, subject_ids: Sequence[int]
 ) -> List[tuple]:
@@ -137,6 +167,7 @@ def score_cox_predictions(
     subjects: List[Dict],
     subject_ids: Sequence[int],
     splits_df: pd.DataFrame,
+    partition: str = "test",
 ) -> Dict[int, Dict[str, float]]:
     """Score Cox linear predictors with the project's IPCW C-index.
 
@@ -151,9 +182,13 @@ def score_cox_predictions(
     n_dropped = 0
     n_total = 0
 
+    # Older exports carry no partition column; treat them as test-only.
+    if "partition" in cox_df.columns:
+        cox_df = cox_df[cox_df["partition"] == partition]
+
     for (split_id, model), grp in cox_df.groupby(["split_id", "model"]):
         test_ids = splits_df.loc[
-            (splits_df.split_id == split_id) & (splits_df.partition == "test"),
+            (splits_df.split_id == split_id) & (splits_df.partition == partition),
             "id",
         ].unique()
 

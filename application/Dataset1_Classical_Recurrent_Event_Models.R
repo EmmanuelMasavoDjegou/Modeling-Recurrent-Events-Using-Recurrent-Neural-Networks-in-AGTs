@@ -113,15 +113,24 @@ out_path    <- get_arg("--out",    "results/cox_lp_crc.csv")
 if (file.exists(data_path)) {
   cat("Reading preprocessed data from", data_path, "\n")
   formatted_data <- read.csv(data_path)
-  # data/crc.csv from the preprocessing script carries:
-  #   id, time (= t.stop), gap_time, event, Z1, Z2, Z3, Z4, tau
+
+  # The preprocessing scripts export one row per gap, ordered within subject:
+  #   id, gap_time, event, delta, Z1, Z2, Z3
+  # The three time scales the Cox models need are reconstructed from gap_time
+  # rather than read from a separate column. Deriving them here guarantees that
+  # the Cox models and the AFT models are fitted to exactly the same gap times:
+  # if a column of cumulative times were carried alongside, the two could drift
+  # apart under any edit to the preprocessing and nothing would report it.
+  stopifnot(all(c("id", "gap_time") %in% names(formatted_data)))
+  status_col <- if ("delta" %in% names(formatted_data)) "delta" else "event"
+
   formatted_data <- formatted_data %>%
-    rename(stop = time, gtime = gap_time, status = event) %>%
-    arrange(id, stop) %>%
+    mutate(gtime = gap_time, status = .data[[status_col]]) %>%
     group_by(id) %>%
     mutate(
-      start = dplyr::lag(stop, default = 0),
-      order = seq_along(stop)
+      order = seq_along(gtime),        # event index within subject
+      stop  = cumsum(gtime),           # total time since entry
+      start = dplyr::lag(stop, default = 0)
     ) %>%
     ungroup()
 } else {
@@ -202,9 +211,13 @@ splits <- read.csv(splits_path)   # columns: split_id, id, partition
 stopifnot(all(c("split_id", "id", "partition") %in% names(splits)))
 
 fit_and_predict <- function(train_df, test_df) {
-  # Returns a data frame of held-out linear predictors, one row per test
-  # record per model. A model that fails to converge on a given split yields
-  # NA rather than aborting the run; the Python side counts and reports them.
+  # Returns held-out linear predictors for every model, and also the
+  # in-sample linear predictors on the training partition. The training
+  # column of Table 7 is computed the same way for the Cox comparators as for
+  # the AFT models -- a forward pass over the training partition after fitting
+  # -- so that the two families are described by the same quantity.
+  # A model that fails to converge on a given split yields NA rather than
+  # aborting the run; the Python side counts and reports them.
   specs <- list(
     WLW    = function(d) coxph(Surv(stop, status) ~ Z1 + Z2 + Z3 * strata(order) + cluster(id),
                                data = d),
@@ -216,21 +229,23 @@ fit_and_predict <- function(train_df, test_df) {
 
   out <- list()
   for (nm in names(specs)) {
-    lp <- rep(NA_real_, nrow(test_df))
+    lp_te <- rep(NA_real_, nrow(test_df))
+    lp_tr <- rep(NA_real_, nrow(train_df))
     fit <- try(specs[[nm]](train_df), silent = TRUE)
     if (!inherits(fit, "try-error")) {
       # Strata present in test but not in train give NA; that is correct
       # behaviour, not an error. It happens when a split leaves no subject
       # with, say, a 6th event in the training partition.
-      pred <- try(predict(fit, newdata = test_df, type = "lp"), silent = TRUE)
-      if (!inherits(pred, "try-error")) lp <- as.numeric(pred)
+      pte <- try(predict(fit, newdata = test_df, type = "lp"), silent = TRUE)
+      if (!inherits(pte, "try-error")) lp_te <- as.numeric(pte)
+      ptr <- try(predict(fit, newdata = train_df, type = "lp"), silent = TRUE)
+      if (!inherits(ptr, "try-error")) lp_tr <- as.numeric(ptr)
     }
-    out[[nm]] <- data.frame(
-      model = nm,
-      id    = test_df$id,
-      order = test_df$order,
-      lp    = lp,
-      stringsAsFactors = FALSE
+    out[[nm]] <- rbind(
+      data.frame(model = nm, partition = "test",  id = test_df$id,
+                 order = test_df$order, lp = lp_te, stringsAsFactors = FALSE),
+      data.frame(model = nm, partition = "train", id = train_df$id,
+                 order = train_df$order, lp = lp_tr, stringsAsFactors = FALSE)
     )
   }
   do.call(rbind, out)

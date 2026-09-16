@@ -43,6 +43,7 @@ from rnn_agt.cox_bridge import (
     load_cox_predictions,
     merge_into_outcomes,
     score_cox_predictions,
+    write_cv_folds,
     write_splits,
 )
 from rnn_agt.evaluation import (
@@ -134,6 +135,24 @@ def build_configs(args) -> Dict[str, TrainConfig]:
     }
 
 
+
+def _by_model(scores):
+    """Invert {split: {model: value}} to {model: [values]}."""
+    out = {}
+    for per_split in scores.values():
+        for m, v in per_split.items():
+            out.setdefault(m, []).append(v)
+    return out
+
+
+def _mean_sd(values):
+    a = np.array([v for v in values if not np.isnan(v)], dtype=float)
+    if a.size == 0:
+        return {"mean": np.nan, "sd": np.nan}
+    return {"mean": float(a.mean()),
+            "sd": float(a.std(ddof=1)) if a.size > 1 else 0.0}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--id-col", default="id",
@@ -159,6 +178,10 @@ def main() -> None:
                     help="Cox linear predictors for CGD, from the R script.")
     ap.add_argument("--cox-lp-crc", default=None,
                     help="Cox linear predictors for CRC, from the R script.")
+    ap.add_argument("--cox-cv-cgd", default=None,
+                    help="Cox linear predictors for CGD on the CV folds.")
+    ap.add_argument("--cox-cv-crc", default=None,
+                    help="Cox linear predictors for CRC on the CV folds.")
     args = ap.parse_args()
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
@@ -175,6 +198,7 @@ def main() -> None:
         print(f"{name}: {len(subs)} subjects, {n_rec} records, {n_ev} events, p={p}")
 
     split_summary, train_summary, cv_summary = {}, {}, {}
+    cox_extra: Dict[str, Dict] = {}
     deltas, ablation = {}, {}
     all_outcomes = {}
 
@@ -192,7 +216,11 @@ def main() -> None:
             subs, subject_ids[ds], splits_path, args.seed,
             n_splits=args.splits, test_frac=args.test_frac,
         )
+        folds_path = os.path.join(args.splits_out, f"folds_{ds}.csv")
+        folds_df = write_cv_folds(subs, subject_ids[ds], folds_path,
+                                  args.seed, k=args.folds)
         print(f"  split assignments -> {splits_path}")
+        print(f"  CV fold assignments -> {folds_path}")
 
         outcomes = run_repeated_splits(
             subs, p, configs, args.seed, n_splits=args.splits,
@@ -200,15 +228,22 @@ def main() -> None:
         )
 
         cox_path = getattr(args, f"cox_lp_{ds}")
+        cox_train, cox_cv = {}, {}
         if cox_path and os.path.exists(cox_path):
+            cox_df = load_cox_predictions(cox_path)
             cox_scores = score_cox_predictions(
-                load_cox_predictions(cox_path), subs, subject_ids[ds], splits_df
+                cox_df, subs, subject_ids[ds], splits_df, partition="test"
             )
             warning = check_orientation(cox_scores)
             if warning:
                 print(f"  WARNING ({ds}): {warning}")
             outcomes = merge_into_outcomes(outcomes, cox_scores)
+            # training-partition concordance, computed the same way
+            cox_train = score_cox_predictions(
+                cox_df, subs, subject_ids[ds], splits_df, partition="train"
+            )
             print(f"  merged Cox scores from {cox_path}")
+
         else:
             print(
                 f"  no Cox predictors for {ds}; the WLW/PWP-TT/PWP-GT rows of\n"
@@ -216,10 +251,21 @@ def main() -> None:
                 f"  and re-run with --cox-lp-{ds}."
             )
 
+        cv_path = getattr(args, f"cox_cv_{ds}", None)
+        if cv_path and os.path.exists(cv_path):
+            cox_cv = score_cox_predictions(
+                load_cox_predictions(cv_path), subs, subject_ids[ds],
+                folds_df, partition="test",
+            )
+            print(f"  merged Cox cross-validated scores from {cv_path}")
+        cox_extra[ds] = {"train": cox_train, "cv": cox_cv}
+
         all_outcomes[ds] = outcomes
 
         split_summary[ds] = summarise(outcomes, "test_cindex")
         train_summary[ds] = summarise(outcomes, "train_cindex")
+        for m, per_split in _by_model(cox_extra[ds]["train"]).items():
+            train_summary[ds][m] = _mean_sd(per_split)
         ablation[ds] = {}
         for m in MODELS:
             for metric, key in (("test_cindex", "cindex"), ("test_amse", "amse")):
@@ -239,6 +285,8 @@ def main() -> None:
         cv_summary[ds] = run_cross_validation(
             subs, p, configs, args.seed, k=args.folds
         )
+        for m, per_fold in _by_model(cox_extra[ds]["cv"]).items():
+            cv_summary[ds][m] = {"test_cindex": _mean_sd(per_fold)["mean"]}
 
     payload = {
         "split_summary": split_summary,
