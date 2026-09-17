@@ -126,31 +126,60 @@ def main() -> None:
         )
 
     print("\n" + body)
-    print("\n----- Best configuration per dataset -----")
+    # Every configuration is fitted on the SAME splits, so the comparison
+    # between two of them is paired and its standard error is far smaller than
+    # the across-split standard deviation of either one. Comparing a difference
+    # against a marginal sd, as an earlier version of this script did, is the
+    # wrong yardstick and understates the evidence considerably.
+    print("\n----- Capacity comparison (paired across the same splits) -----")
+    default = (2, 64)
     for ds in datasets:
         best = max(results, key=lambda k: results[k][ds]["cindex_mean"])
-        default = (2, 64)
-        b, dft = results[best][ds], results[default][ds]
-        gap = b["cindex_mean"] - dft["cindex_mean"]
+        b_, dft = results[best][ds], results[default][ds]
         print(
             f"  {ds}: best L={best[0]}, d={best[1]} "
-            f"(C={b['cindex_mean']:.3f}, {b['params']:,} params, "
-            f"{b['params_per_subject']:.1f} per training subject)"
+            f"(C={b_['cindex_mean']:.3f}, {b_['params']:,} params, "
+            f"{b_['params_per_subject']:.1f} per training subject); "
+            f"default L=2, d=64 gives C={dft['cindex_mean']:.3f}"
         )
-        print(
-            f"        default L=2, d=64 gives C={dft['cindex_mean']:.3f}; "
-            f"gap {gap:+.3f} against an across-split sd of {dft['cindex_sd']:.3f}"
-        )
-        if gap > 0 and gap < dft["cindex_sd"]:
-            print(
-                "        The gap is inside one standard deviation, so the "
-                "smaller model is not demonstrably better; report it as a wash."
-            )
-        elif gap > dft["cindex_sd"]:
-            print(
-                "        The smaller model wins by more than one sd. Update the "
-                "configuration reported in Section 5.2 accordingly."
-            )
+        pb = np.asarray(b_.get("cindex_per_split", []), dtype=float)
+        pd_ = np.asarray(dft.get("cindex_per_split", []), dtype=float)
+        if pb.size and pb.size == pd_.size:
+            d = pb - pd_
+            se = float(d.std(ddof=1) / np.sqrt(d.size))
+            lo, hi = d.mean() - 1.96 * se, d.mean() + 1.96 * se
+            print(f"        paired difference {d.mean():+.4f} "
+                  f"(95% CI {lo:+.4f}, {hi:+.4f}), "
+                  f"smaller model ahead on {100 * (d > 0).mean():.0f}% of splits")
+            if lo > 0:
+                print("        The smaller configuration is reliably better. "
+                      "Update the configuration\n        reported in Section 5.2 "
+                      "and the Table 8 footnote accordingly.")
+            elif hi < 0:
+                print("        The default is reliably better; retain it.")
+            else:
+                print("        The interval contains zero: these data do not "
+                      "separate the two.")
+        else:
+            print("        (per-split values unavailable; re-run to obtain the "
+                  "paired comparison)")
+
+        # the cheapest configuration not reliably worse than the best
+        cheap = None
+        for cfg in sorted(results, key=lambda k: results[k][ds]["params"]):
+            pc = np.asarray(results[cfg][ds].get("cindex_per_split", []), dtype=float)
+            if not pc.size or pc.size != pb.size:
+                continue
+            d = pb - pc
+            se = float(d.std(ddof=1) / np.sqrt(d.size)) or 1e-12
+            if d.mean() - 1.96 * se <= 0:      # not reliably worse than best
+                cheap = cfg
+                break
+        if cheap:
+            c = results[cheap][ds]
+            print(f"        cheapest configuration not reliably worse than the "
+                  f"best: L={cheap[0]}, d={cheap[1]} "
+                  f"({c['params']:,} params, C={c['cindex_mean']:.3f})")
 
 
 if __name__ == "__main__":
