@@ -3,8 +3,8 @@ title: "RNN-AGT: A Recurrent Neural Network Framework for Accelerated Gap-Time M
 message: "If you use this software, please cite the associated paper."
 type: software
 authors:
-  - family-names: Masavo Djegou
-    given-names: Emmanuel
+  - family-names: Djegou
+    given-names: Emmanuel Masavo
   - family-names: Adekpedjou
     given-names: Akim
   - family-names: Wen
