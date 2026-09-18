@@ -453,7 +453,7 @@ metrics, both CPU-bound. A GPU gives little benefit and can be slower.
 
 If you use this code, please cite the paper:
 
-> Masavo Djegou, E., Adekpedjou, A. and Wen, X. M. *RNN-AGT: A Recurrent Neural
+> Djegou, E. M., Adekpedjou, A. and Wen, X. M. *RNN-AGT: A Recurrent Neural
 > Network Framework for Accelerated Gap-Time Modeling via Gehan-Type Rank Loss.*
 
 Machine-readable metadata is in `CITATION.cff`. The code is released under the
