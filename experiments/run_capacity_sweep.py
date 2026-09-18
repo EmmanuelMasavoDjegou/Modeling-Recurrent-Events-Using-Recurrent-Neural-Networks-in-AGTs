@@ -129,8 +129,8 @@ def main() -> None:
     # Every configuration is fitted on the SAME splits, so the comparison
     # between two of them is paired and its standard error is far smaller than
     # the across-split standard deviation of either one. Comparing a difference
-    # against a marginal sd, as an earlier version of this script did, is the
-    # wrong yardstick and understates the evidence considerably.
+    # against a marginal standard deviation is the wrong yardstick here and
+    # understates the evidence considerably.
     print("\n----- Capacity comparison (paired across the same splits) -----")
     default = (2, 64)
     for ds in datasets:

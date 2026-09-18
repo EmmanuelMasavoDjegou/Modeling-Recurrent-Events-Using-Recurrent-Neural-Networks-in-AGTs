@@ -1,24 +1,27 @@
 ###############################################################################
 # Dataset 1: colorectal cancer readmission (frailtypack::readmission)
 #
-# CHANGES IN THIS REVISION
-# ------------------------
-# The exploratory and plotting sections are unchanged. Three additions at the
-# end make the output directly consumable by the Python drivers:
+# Converts the packaged dataset into the one-row-per-gap format the analysis
+# code consumes, and writes it to data/crc.csv.
 #
-#   1. A `delta` column is written alongside `event`. The Python loader expects
-#      `delta` (1 = fully observed gap, 0 = censored); keeping both avoids a
-#      silent mismatch if either side is edited later.
+# Output columns
+#   id         subject identifier
+#   gap_time   time since the previous event, or since entry for the first
+#   event      1 if the gap ends in an observed event, 0 if incomplete
+#   delta      the same indicator under the name the Python loader expects;
+#              both are written so that an edit to either side cannot create a
+#              silent mismatch
+#   Z1, Z2, Z3 baseline covariates
 #
-#   2. Non-positive gap times now raise rather than being dropped quietly. The
-#      AFT models work on the log scale, so a zero gap is not representable.
-#      Dropping it here while the Cox side keeps it would put the two model
-#      families on different row sets and break the pairing that Table 8's
-#      paired differences depend on.
+# Non-positive gap times raise rather than being dropped. The accelerated
+# gap-time models work on the log scale, so a zero gap is not representable;
+# dropping it here while the Cox scripts retained it would put the two model
+# families on different row sets and break the pairing that the paired
+# differences in Table 7 depend on.
 #
-#   3. A short integrity report is printed: subjects, records, events, and the
-#      censoring fraction. These are the numbers quoted in Section 5.1, so
-#      they should be checked against the manuscript rather than assumed.
+# An integrity report is printed at the end: subjects, records, events and the
+# censoring fraction. These are the quantities quoted in Section 5.1 of the
+# manuscript.
 ###############################################################################
 
 # Paths below are relative to the REPOSITORY ROOT. Run this script from

@@ -347,9 +347,10 @@ def main() -> None:
                 f"{latex.fmt_diff_ci(d)}  win rate {d['win_rate']:.2f}"
             )
         print(
-            "\nThese are the numbers for the Table 7 footnote. Both sides now\n"
-            "come from the same splits and the same IPCW estimator, unlike the\n"
-            "single-split comparison retained in Table 7."
+            "\nThese are the numbers for the Table 7 footnote. Both sides come\n"
+            "from the same splits and the same IPCW estimator, so the difference\n"
+            "is a paired quantity: its standard error is much smaller than the\n"
+            "across-split standard deviation of either model alone."
         )
 
 

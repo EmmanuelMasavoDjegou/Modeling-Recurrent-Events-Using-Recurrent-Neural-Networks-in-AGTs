@@ -1,4 +1,16 @@
-# RNN-AGT
+<p align="center">
+  <img src="docs/header.png" alt="RNN-AGT" width="100%">
+</p>
+
+<p align="center">
+  <a href="#method">Method</a> &middot;
+  <a href="#installation">Installation</a> &middot;
+  <a href="#reproducing-the-results">Reproducing the results</a> &middot;
+  <a href="#repository-structure">Structure</a> &middot;
+  <a href="#citation">Citation</a>
+</p>
+
+---
 
 A recurrent neural network framework for semiparametric accelerated gap-time
 modeling of recurrent event data, estimated with a Gehan-type weighted
@@ -59,39 +71,45 @@ isolates GRU-based history modeling.
 │   ├── models.py                # AGTWRS, NNAGT, RNNAGT
 │   ├── losses.py                # Gehan-WRS objective, exact and subsampled
 │   ├── sampling.py              # pair sampler with explicit inclusion probabilities
-│   ├── metrics.py               # vectorised IPCW C-index and AMSE
+│   ├── metrics.py               # IPCW C-index, AMSE, and the location shift
 │   ├── train.py                 # one trainer, all three model classes
 │   ├── evaluation.py            # repeated splits, k-fold CV, paired differences
 │   ├── cox_bridge.py            # R/Python bridge for the Cox comparators
 │   ├── latex.py                 # emits table rows for the manuscript
 │   └── diagnostics.py           # correctness checks
 │
-├── experiments/                 # command-line drivers, one per table
-│   ├── run_diagnostics.py       # run this first
-│   ├── run_simulation_tables.py         Tables 1-3
-│   ├── run_dependence_robustness.py     Table 5
-│   ├── run_benchmark_rows.py            Table 7
-│   ├── run_ablation_and_splits.py       Tables 6 and 7
-│   └── run_capacity_sweep.py            Table 8
+├── experiments/                 # command-line drivers
+│   ├── run_diagnostics.py                 run this first
+│   ├── run_simulation_tables.py           Tables 1-3
+│   ├── run_subsampling_sensitivity.py     Table 4
+│   ├── run_dependence_robustness.py       Table 5
+│   ├── run_ablation_and_splits.py         Tables 6 and 7
+│   ├── run_capacity_sweep.py              Table 8
+│   ├── paired_capacity.py                 paired comparison from a saved run
+│   ├── run_loss_figures.py                Figure 2
+│   └── run_highdim_figures.py             Figures 3 and 4
 │
-├── simulation/
+├── simulation/                  # notebooks for exploration, not for the tables
 │   ├── model_demo.ipynb                 walkthrough of the three model classes
 │   ├── loss_sensitivity.ipynb           sensitivity to loss and censoring choices
 │   ├── subsampling_sensitivity.ipynb    one configuration at a time
-│   ├── high_dimensional.ipynb           behaviour as the covariate dimension grows
-│   └── figures.ipynb                    manuscript figures
+│   ├── high_dimensional.ipynb           one covariate dimension at a time
+│   └── figures.ipynb                    one loss trajectory at a time
 │
-├── application/
-│   ├── real_data_analysis.ipynb         Tables 6-9
-│   ├── split_sensitivity.ipynb          variability across random train/test splits
-│   ├── Dataset1_Data_Preprocessing.R            colorectal readmission -> data/crc.csv
-│   ├── Dataset1_Classical_Recurrent_Event_Models.R
-│   ├── Dataset2_Data_Preprocessing.R            CGD -> data/cgd.csv
-│   └── Dataset2_Classical_Recurrent_Event_Models.R
+├── application/                 # the two clinical analyses
+│   ├── Dataset1_Data_Preprocessing.R              CRC  -> data/crc.csv
+│   ├── Dataset2_Data_Preprocessing.R              CGD  -> data/cgd.csv
+│   ├── Dataset1_Classical_Recurrent_Event_Models.R  Cox comparators, CRC
+│   ├── Dataset2_Classical_Recurrent_Event_Models.R  Cox comparators, CGD
+│   ├── real_data_analysis.ipynb                   the fitted models
+│   └── split_sensitivity.ipynb                    variability across partitions
 │
-├── literature_review/           # background reading
-├── data/                        # generated CSVs (git-ignored)
-└── results/                     # tables, figures, JSON (git-ignored)
+├── data/                        # written by the R preprocessing, git-ignored
+├── results/                     # driver output, git-ignored
+├── docs/                        # repository assets
+├── requirements.txt
+├── CITATION.cff
+└── LICENSE
 ```
 
 All paths are relative to the repository root. Run scripts from there
@@ -145,10 +163,6 @@ fragment carries a comment giving the column order.
 
 ---
 
-[`CHECKLIST.md`](CHECKLIST.md) tracks every table, figure and unfilled
-placeholder against the command that produces it, including the order the
-real-data stages must run in and the prose placeholders no script fills.
-
 ## Which script produces which figure
 
 | Figure | Contents | Produced by | Output files |
@@ -196,11 +210,13 @@ results, which are the ones quoted in Section 5.3 of the manuscript:
 
 | Component | Version |
 |---|---|
-| Python | 3.12.3 |
+| Python | 3.14.6 |
 | PyTorch | 2.14.0 |
-| NumPy | 2.4.4 |
-| pandas | 3.0.2 |
-| matplotlib | 3.10.8 |
+| R | 4.5.3 |
+| survival | 3.8.11 |
+
+Hardware: Intel Core i5-10500 at 3.10 GHz, 12 logical cores, 16 GB memory. CPU
+only; no GPU is used at any stage.
 
 Record your own with:
 
@@ -435,4 +451,10 @@ metrics, both CPU-bound. A GPU gives little benefit and can be slower.
 
 ## Citation
 
-See `CITATION.cff`. Licensed under MIT.
+If you use this code, please cite the paper:
+
+> Masavo Djegou, E., Adekpedjou, A. and Wen, X. M. *RNN-AGT: A Recurrent Neural
+> Network Framework for Accelerated Gap-Time Modeling via Gehan-Type Rank Loss.*
+
+Machine-readable metadata is in `CITATION.cff`. The code is released under the
+MIT licence; see `LICENSE`.
