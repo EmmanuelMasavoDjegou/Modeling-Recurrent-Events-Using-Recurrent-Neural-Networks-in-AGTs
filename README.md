@@ -17,8 +17,8 @@ modeling of recurrent event data, estimated with a Gehan-type weighted
 risk-set (WRS) rank loss.
 
 Code accompanying *RNN-AGT: A Recurrent Neural Network Framework for
-Accelerated Gap-Time Modeling via Gehan-Type Rank Loss* by Emmanuel Masavo
-Djegou, Akim Adekpedjou and Xuerong Meggie Wen.
+Accelerated Gap-Time Modeling via Gehan-Type Rank Loss* by Emmanuel Djegou,
+Akim Adekpedjou and Xuerong Meggie Wen.
 
 ---
 
@@ -453,7 +453,7 @@ metrics, both CPU-bound. A GPU gives little benefit and can be slower.
 
 If you use this code, please cite the paper:
 
-> Djegou, E. M., Adekpedjou, A. and Wen, X. M. *RNN-AGT: A Recurrent Neural
+> E. Djegou, A. Adekpedjou and X. M. Wen. *RNN-AGT: A Recurrent Neural
 > Network Framework for Accelerated Gap-Time Modeling via Gehan-Type Rank Loss.*
 
 Machine-readable metadata is in `CITATION.cff`. The code is released under the

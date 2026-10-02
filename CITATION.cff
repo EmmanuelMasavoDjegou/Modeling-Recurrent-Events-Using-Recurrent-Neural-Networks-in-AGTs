@@ -4,7 +4,7 @@ message: "If you use this software, please cite the associated paper."
 type: software
 authors:
   - family-names: Djegou
-    given-names: Emmanuel Masavo
+    given-names: Emmanuel
   - family-names: Adekpedjou
     given-names: Akim
   - family-names: Wen
